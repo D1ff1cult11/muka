@@ -1,5 +1,6 @@
+
 import Link from "next/link";
-import { ArrowRight, Shield, Zap, CalendarDays, Inbox, Clock, Target, Layers } from "lucide-react";
+import { ArrowRight, Shield, Zap, Inbox, Target, Layers } from "lucide-react";
 
 export default function Home() {
   return (
@@ -101,7 +102,7 @@ export default function Home() {
         <section className="w-full max-w-4xl mx-auto px-6 py-32 text-center flex flex-col items-center">
           <QuoteIcon />
           <p className="text-2xl md:text-4xl font-light leading-snug text-white/90 mt-8 mb-6">
-            "The key is in not spending time, but in investing it."
+            &quot;The key is in not spending time, but in investing it.&quot;
           </p>
           <p className="text-sm text-slate-400 tracking-widest uppercase font-semibold">Stephen R. Covey</p>
 

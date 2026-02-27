@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies'
+
 import { headers } from 'next/headers'
 
 export async function login(formData: FormData) {
@@ -22,8 +22,8 @@ export async function login(formData: FormData) {
         redirect('/login?error=Could not authenticate user')
     }
 
-    revalidatePath('/', 'layout')
-    redirect('/')
+    revalidatePath('/dashboard', 'layout')
+    redirect('/dashboard')
 }
 
 export async function signup(formData: FormData) {
@@ -40,8 +40,8 @@ export async function signup(formData: FormData) {
         redirect('/signup?error=Could not create user')
     }
 
-    revalidatePath('/', 'layout')
-    redirect('/')
+    revalidatePath('/dashboard', 'layout')
+    redirect('/dashboard')
 }
 
 export async function signout() {
@@ -56,7 +56,7 @@ export async function signInWithGoogle() {
     const origin = (await headers()).get('origin');
     const redirectUrl = origin ? `${origin}/auth/callback` : `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { data } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
             redirectTo: redirectUrl,

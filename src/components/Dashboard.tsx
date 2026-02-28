@@ -1,7 +1,7 @@
 'use client'
 
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
-import { useMukaStore, ZoneType } from '@/store/useMukaStore';
+import { useMukaStore, ZoneType, Message } from '@/store/useMukaStore';
 import { ZoneColumn } from './ZoneColumn';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -69,7 +69,7 @@ export function Dashboard() {
         return <div className="min-h-screen bg-void text-zinc-600 flex items-center justify-center font-mono text-[10px] tracking-[0.4em] uppercase">Initializing_Neural_Shield...</div>;
     }
 
-    const filterMessages = (msgs: any[]) => {
+    const filterMessages = (msgs: Message[]) => {
         if (!searchQuery) return msgs;
         const lowerQuery = searchQuery.toLowerCase();
         return msgs.filter(m =>

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getGoogleAuth, fetchRecentEmails, fetchUpcomingAssignments, fetchRecentAnnouncements } from '@/lib/google';
 import { ingestAndClassify } from '@/services/classify.service';
@@ -79,9 +79,9 @@ export async function POST() {
                 }, user.id);
                 results.announcementsIngested++;
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Classroom Announcements Fetch Error", e);
-            results.errors.push(`Classroom Announcements Error: ${e.message}`);
+            results.errors.push(`Classroom Announcements Error: ${e instanceof Error ? e.message : String(e)}`);
         }
 
         console.log("== GOOGLE SYNC RESULTS ==", results);

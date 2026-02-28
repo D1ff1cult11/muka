@@ -1,8 +1,8 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Plus, Hash, Ghost, Zap, Bell, ShieldCheck, Archive, Search, Target, Shield, Settings, CheckCircle2 } from 'lucide-react'
-import { useMukaStore, ZoneType } from '@/store/useMukaStore'
+import { Plus, Hash, Ghost, Zap, Bell, ShieldCheck, Search, Target, Shield, Settings, CheckCircle2 } from 'lucide-react'
+import { useMukaStore, ZoneType, Message } from '@/store/useMukaStore'
 import { cn } from '@/lib/utils'
 import { MessageCard } from '@/components/MessageCard'
 import { createClient } from '@/lib/supabase/client'
@@ -11,7 +11,7 @@ import Link from 'next/link'
 
 const CONTEXT_MAP: Record<string, {
     title: string,
-    sections: { label: string, colorClassTitle?: string, items: { icon: React.ElementType, label: string, badge?: string, message?: any, zone?: any, colorClass?: string }[] }[]
+    sections: { label: string, colorClassTitle?: string, items: { icon: React.ElementType, label: string, badge?: string, message?: Message, zone?: unknown, colorClass?: string }[] }[]
 }> = {
     '/home': {
         title: '',

@@ -230,8 +230,8 @@ export async function fetchRecentAnnouncements(auth: Auth.OAuth2Client): Promise
                     url: a.alternateLink || ''
                 });
             }
-        } catch (e: any) {
-            console.warn(`[GClassroom Warning] Skipping course announcements ${course.id}: ${e?.message}`);
+        } catch (e: unknown) {
+            console.warn(`[GClassroom Warning] Skipping course announcements ${course.id}: ${e instanceof Error ? e.message : String(e)}`);
         }
     }
 
@@ -255,7 +255,7 @@ export async function fetchUnreadEmailsCount(auth: Auth.OAuth2Client): Promise<n
         });
 
         return listRes.data.resultSizeEstimate || (listRes.data.messages?.length ?? 0);
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[Google API] Error fetching unread email count', e);
         return 0;
     }
@@ -306,13 +306,13 @@ export async function fetchPendingAssignmentsCount(auth: Auth.OAuth2Client): Pro
                         pendingCount++;
                     }
                 }
-            } catch (courseErr: any) {
+            } catch (courseErr: unknown) {
                 // Ignore per-course errors (like disabled coursework)
             }
         }
 
         return pendingCount;
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[Google API] Error fetching pending assignments count', e);
         return 0;
     }

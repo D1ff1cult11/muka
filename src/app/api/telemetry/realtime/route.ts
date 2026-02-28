@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getGoogleAuth, fetchUnreadEmailsCount, fetchPendingAssignmentsCount } from '@/lib/google';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
     try {
         const supabase = await createClient();
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
             saved: focusROI
         }, { status: 200 });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('[GET /api/telemetry/realtime]', err);
-        return NextResponse.json({ error: err.message || 'Unexpected error' }, { status: 500 });
+        return NextResponse.json({ error: err instanceof Error ? err.message : 'Unexpected error' }, { status: 500 });
     }
 }

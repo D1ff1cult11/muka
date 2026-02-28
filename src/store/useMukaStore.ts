@@ -108,15 +108,20 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                 const now = new Date();
                 const currentTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
                 const isWindowActive = windows.some(w => w.active && w.time === currentTimeStr);
+
+                type ApiNotification = {
+                    id: string; title?: string; sender?: string; raw_text: string; bluf?: string; created_at: string | number;
+                };
+
                 set({
                     isWindowActive,
-                    instant: (data.instant || []).map((n: any) => ({
+                    instant: (data.instant || []).map((n: ApiNotification) => ({
                         id: n.id, title: n.title || n.sender, content: n.raw_text, bluf: n.bluf, sender: n.sender, type: 'instant', createdAt: new Date(n.created_at).getTime()
                     })),
-                    scheduled: (data.scheduled || []).map((n: any) => ({
+                    scheduled: (data.scheduled || []).map((n: ApiNotification) => ({
                         id: n.id, title: n.title || n.sender, content: n.raw_text, bluf: n.bluf, sender: n.sender, type: 'scheduled', createdAt: new Date(n.created_at).getTime()
                     })),
-                    batch: (data.batch || []).map((n: any) => ({
+                    batch: (data.batch || []).map((n: ApiNotification) => ({
                         id: n.id, title: n.title || n.sender, content: n.raw_text, bluf: n.bluf, sender: n.sender, type: 'batch', createdAt: new Date(n.created_at).getTime()
                     })),
                 });
@@ -151,7 +156,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                             id: item.id,
                             title: item.title,
                             content: item.snippet,
-                            bluf: (item as any).bluf, // Temporary any cast since feed API doesn't define bluf in this scope yet
+                            bluf: (item as unknown as { bluf?: string }).bluf, // Temporary any cast since feed API doesn't define bluf in this scope yet
                             sender: item.sender || (item.source.charAt(0).toUpperCase() + item.source.slice(1)),
                             type: item.label.toLowerCase() as ZoneType,
                             createdAt: new Date(item.timestamp).getTime(),
@@ -220,7 +225,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             set({
                 [historyKey]: historyList,
                 [zone]: activeList
-            } as any);
+            } as Partial<MukaState>);
 
             toast.success('Signal Restored');
 

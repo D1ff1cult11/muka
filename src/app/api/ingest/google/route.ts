@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getGoogleAuth, fetchRecentEmails, fetchUpcomingAssignments } from '@/lib/google';
+import { getGoogleAuth, fetchRecentEmails, fetchUpcomingAssignments, fetchRecentAnnouncements } from '@/lib/google';
 import { ingestAndClassify } from '@/services/classify.service';
 
 export async function POST(req: NextRequest) {
@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
         const results = {
             emailsIngested: 0,
             assignmentsIngested: 0,
+            announcementsIngested: 0,
             errors: [] as string[],
         };
 
@@ -51,13 +52,29 @@ export async function POST(req: NextRequest) {
                 await ingestAndClassify({
                     raw_text: `Assignment: ${assignment.title}\nDue: ${assignment.dueDate.toLocaleString()}\n\n${assignment.description}`,
                     source: 'classroom',
-                    sender: 'Google Classroom',
+                    sender: assignment.courseName,
                 }, user.id);
                 results.assignmentsIngested++;
             }
         } catch (e: any) {
             console.error("Classroom Fetch Error", e);
             results.errors.push(`Classroom Error: ${e.message}`);
+        }
+
+        // 3. Fetch and ingest recent announcements
+        try {
+            const announcements = await fetchRecentAnnouncements(auth);
+            for (const ann of announcements) {
+                await ingestAndClassify({
+                    raw_text: `Announcement: ${ann.text}\n\nLink: ${ann.url}`,
+                    source: 'classroom',
+                    sender: ann.courseName,
+                }, user.id);
+                results.announcementsIngested++;
+            }
+        } catch (e: any) {
+            console.error("Classroom Announcements Fetch Error", e);
+            results.errors.push(`Classroom Announcements Error: ${e.message}`);
         }
 
         console.log("== GOOGLE SYNC RESULTS ==", results);

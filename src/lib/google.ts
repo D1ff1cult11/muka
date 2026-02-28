@@ -30,9 +30,19 @@ export interface ExtractedEmail {
 export interface ExtractedAssignment {
     id: string;
     courseId: string;
+    courseName: string;
     title: string;
     description: string;
     dueDate: Date;
+    url: string;
+}
+
+export interface ExtractedAnnouncement {
+    id: string;
+    courseId: string;
+    courseName: string;
+    text: string;
+    createdAt: Date;
     url: string;
 }
 
@@ -148,6 +158,7 @@ export async function fetchUpcomingAssignments(auth: Auth.OAuth2Client): Promise
                         upcomingAssignments.push({
                             id: work.id || '',
                             courseId: course.id,
+                            courseName: course.name || 'Google Classroom',
                             title: work.title || 'Untitled Assignment',
                             description: work.description || '',
                             dueDate,
@@ -166,4 +177,49 @@ export async function fetchUpcomingAssignments(auth: Auth.OAuth2Client): Promise
 
     // Sort by soonest due date
     return upcomingAssignments.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+}
+
+/**
+ * Pulls the most recent announcements from Google Classroom.
+ */
+export async function fetchRecentAnnouncements(auth: Auth.OAuth2Client): Promise<ExtractedAnnouncement[]> {
+    const classroom = google.classroom({ version: 'v1', auth });
+
+    const coursesRes = await classroom.courses.list({
+        courseStates: ['ACTIVE'],
+    });
+
+    const courses = coursesRes.data.courses;
+    if (!courses || courses.length === 0) return [];
+
+    let announcements: ExtractedAnnouncement[] = [];
+
+    for (const course of courses) {
+        if (!course.id) continue;
+        try {
+            const annRes = await classroom.courses.announcements.list({
+                courseId: course.id,
+                orderBy: 'updateTime desc',
+            });
+            const anns = annRes.data.announcements;
+            if (!anns) continue;
+
+            for (const a of anns) {
+                announcements.push({
+                    id: a.id || '',
+                    courseId: course.id,
+                    courseName: course.name || 'Google Classroom',
+                    text: a.text || 'No text',
+                    createdAt: new Date(a.updateTime || Date.now()),
+                    url: a.alternateLink || ''
+                });
+            }
+        } catch (e: any) {
+            console.warn(`[GClassroom Warning] Skipping course announcements ${course.id}: ${e?.message}`);
+        }
+    }
+
+    // Sort by most recent
+    announcements = announcements.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return announcements.slice(0, 5); // Target the 5 most recent across all active classes
 }

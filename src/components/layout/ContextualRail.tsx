@@ -2,41 +2,19 @@
 
 import { usePathname } from 'next/navigation'
 import { Plus, Hash, Ghost, Zap, Bell, ShieldCheck, Archive, Search, Target, Shield, Settings, CheckCircle2 } from 'lucide-react'
-import { useMukaStore } from '@/store/useMukaStore'
+import { useMukaStore, ZoneType } from '@/store/useMukaStore'
+import { cn } from '@/lib/utils'
+import { MessageCard } from '@/components/MessageCard'
 
 import React from 'react';
 
 const CONTEXT_MAP: Record<string, {
     title: string,
-    sections: { label: string, items: { icon: React.ElementType, label: string, badge?: string }[] }[]
+    sections: { label: string, colorClassTitle?: string, items: { icon: React.ElementType, label: string, badge?: string, message?: any, zone?: any, colorClass?: string }[] }[]
 }> = {
     '/home': {
         title: '',
-        sections: [
-            {
-                label: 'FILTERS',
-                items: [
-                    { icon: Zap, label: 'Real-time Stream', badge: 'Active' },
-                    { icon: Bell, label: 'Scheduled Feed' },
-                    { icon: Ghost, label: 'Suppressed Items' },
-                ]
-            },
-            {
-                label: 'CHANNELS',
-                items: [
-                    { icon: Hash, label: 'global-intercept' },
-                    { icon: Hash, label: 'emergency-bypass' },
-                    { icon: Hash, label: 'cluster-logs' },
-                ]
-            },
-            {
-                label: 'ARCHIVE',
-                items: [
-                    { icon: Archive, label: 'SENTINEL_DUMP' },
-                    { icon: Archive, label: 'PR_01_LOGS' },
-                ]
-            }
-        ]
+        sections: []
     },
     '/ledger': {
         title: 'THE_LEDGER',
@@ -117,24 +95,26 @@ export function ContextualRail() {
         config = {
             ...baseConfig,
             sections: [
-                baseConfig.sections[0], // Keep FILTERS
                 {
                     label: 'INSTANT_HISTORY',
+                    colorClassTitle: 'text-cyber-red',
                     items: historyInstant.length > 0
-                        ? historyInstant.map(m => ({ icon: CheckCircle2, label: m.title || m.content.substring(0, 20) + '...', badge: '' }))
-                        : [{ icon: Ghost, label: 'No recent activity' }]
+                        ? historyInstant.map(m => ({ icon: CheckCircle2, label: m.title || m.content.substring(0, 20) + '...', badge: '', message: m, zone: 'instant', colorClass: 'text-cyber-red/70 group-hover:text-cyber-red' }))
+                        : [{ icon: Ghost, label: 'No recent activity', colorClass: 'text-white/40' }]
                 },
                 {
                     label: 'TIMELINE_HISTORY',
+                    colorClassTitle: 'text-electric-amber',
                     items: historyScheduled.length > 0
-                        ? historyScheduled.map(m => ({ icon: CheckCircle2, label: m.title || m.content.substring(0, 20) + '...', badge: '' }))
-                        : [{ icon: Ghost, label: 'No recent activity' }]
+                        ? historyScheduled.map(m => ({ icon: CheckCircle2, label: m.title || m.content.substring(0, 20) + '...', badge: '', message: m, zone: 'scheduled', colorClass: 'text-electric-amber/70 group-hover:text-electric-amber' }))
+                        : [{ icon: Ghost, label: 'No recent activity', colorClass: 'text-white/40' }]
                 },
                 {
                     label: 'VAULT_HISTORY',
+                    colorClassTitle: 'text-neon-green',
                     items: historyBatch.length > 0
-                        ? historyBatch.map(m => ({ icon: CheckCircle2, label: m.title || m.content.substring(0, 20) + '...', badge: '' }))
-                        : [{ icon: Ghost, label: 'No recent activity' }]
+                        ? historyBatch.map(m => ({ icon: CheckCircle2, label: m.title || m.content.substring(0, 20) + '...', badge: '', message: m, zone: 'batch', colorClass: 'text-neon-green/70 group-hover:text-neon-green' }))
+                        : [{ icon: Ghost, label: 'No recent activity', colorClass: 'text-white/40' }]
                 }
             ]
         };
@@ -152,34 +132,41 @@ export function ContextualRail() {
             )}
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto py-6 px-3 space-y-8">
+            <div className="flex-1 overflow-y-auto py-6 px-3 space-y-5">
                 {config.sections.map((section, idx) => (
                     <div key={idx} className="space-y-2">
                         <div className="px-3 flex items-center justify-between group">
-                            <span className="text-[10px] font-bold text-zinc-600 tracking-[0.2em] uppercase">
+                            <span className={cn("text-[10px] font-bold tracking-[0.2em] uppercase", section.colorClassTitle || "text-zinc-600")}>
                                 {section.label}
                             </span>
-                            <Plus className="w-3 h-3 text-zinc-600 transition-opacity cursor-pointer hover:text-white" />
+                            <Plus className={cn("w-3 h-3 transition-opacity cursor-pointer hover:text-white", section.colorClassTitle || "text-zinc-600")} />
                         </div>
 
                         <div className="space-y-[2px]">
                             {section.items.map((item, i) => (
-                                <div
-                                    key={i}
-                                    className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-surface group cursor-pointer transition-colors"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <item.icon className="w-4 h-4 text-zinc-500 group-hover:text-zinc-200" />
-                                        <span className="text-[13px] font-medium text-zinc-400 group-hover:text-zinc-200 truncate">
-                                            {item.label}
-                                        </span>
+                                item.message ? (
+                                    <div key={i} className="mb-2">
+                                        <MessageCard
+                                            message={item.message}
+                                            zoneType={item.zone as ZoneType}
+                                            index={i}
+                                            isDragging={false}
+                                            isHistory={true}
+                                        />
                                     </div>
-                                    {item.badge && item.badge !== '' && (
-                                        <span className="text-[9px] font-bold text-cyber-red bg-cyber-red/10 px-1.5 py-0.5 rounded-full uppercase tracking-widest">
-                                            {item.badge}
-                                        </span>
-                                    )}
-                                </div>
+                                ) : (
+                                    <div
+                                        key={i}
+                                        className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-surface group transition-colors relative pointer-events-none"
+                                    >
+                                        <div className="flex items-center gap-2 overflow-hidden pr-8">
+                                            <item.icon className={cn("w-4 h-4 shrink-0 transition-colors", item.colorClass || "text-zinc-500")} />
+                                            <span className={cn("text-[13px] font-medium truncate transition-colors", item.colorClass || "text-zinc-400")}>
+                                                {item.label}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )
                             ))}
                         </div>
                     </div>

@@ -7,34 +7,8 @@ import { useMukaStore } from '@/store/useMukaStore'
 import { cn } from '@/lib/utils'
 
 export function TelemetryBar() {
-    const { energySaved, focusScore, scheduled, batch, fetchFeed } = useMukaStore()
-    const [inputValue, setInputValue] = useState('')
-    const [isIngesting, setIsIngesting] = useState(false)
+    const { fetchFeed, searchQuery, setSearchQuery } = useMukaStore()
     const [isSyncing, setIsSyncing] = useState(false)
-
-    const totalQueue = scheduled.length + batch.length
-
-    const handleIngest = async (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && inputValue.trim() && !isIngesting) {
-            setIsIngesting(true)
-            try {
-                const res = await fetch('/api/ingest', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: inputValue, source: 'manual' }),
-                })
-
-                if (res.ok) {
-                    setInputValue('')
-                    await fetchFeed()
-                }
-            } catch (error) {
-                console.error('Ingestion failed:', error)
-            } finally {
-                setIsIngesting(false)
-            }
-        }
-    }
 
     const triggerSync = async () => {
         setIsSyncing(true)
@@ -49,19 +23,20 @@ export function TelemetryBar() {
     }
 
     return (
-        <nav className="h-[72px] w-full bg-void/80 backdrop-blur-2xl border-b-[0.5px] border-muka-border flex items-center justify-between px-8 shrink-0 relative z-40">
-            {/* Search / Command Palette */}
-            <div className="flex-1 max-w-xl">
-                <div className="relative group">
+        <nav className="h-[72px] w-full bg-void/80 backdrop-blur-2xl border-b-[0.5px] border-muka-border flex items-center px-4 md:px-8 shrink-0 relative z-40">
+            {/* Left Spacer */}
+            <div className="flex-1 hidden md:block relative z-10"></div>
+
+            {/* Search / Command Palette - Absolute Center */}
+            <div className="absolute left-1/2 -translate-x-1/2 w-[calc(100%-120px)] md:w-[600px] z-20">
+                <div className="relative group w-full">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-cyber-red transition-colors" />
                     <input
                         type="text"
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={handleIngest}
-                        disabled={isIngesting}
-                        placeholder={isIngesting ? "CLASSIFYING..." : "GLOBAL COMMAND PALETTE"}
-                        className="w-full bg-surface border-[0.5px] border-muka-border focus:border-cyber-red/50 focus:bg-black rounded-xl py-2.5 pl-12 pr-12 text-[12px] font-bold tracking-[0.1em] text-zinc-200 placeholder-zinc-600 outline-none transition-all disabled:opacity-50"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="GLOBAL COMMAND PALETTE"
+                        className="w-full bg-surface border-[0.5px] border-muka-border focus:border-cyber-red/50 focus:bg-black rounded-xl py-2.5 pl-12 pr-12 text-[12px] font-bold tracking-[0.1em] text-zinc-200 placeholder-zinc-600 outline-none transition-all"
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-1 rounded border-subpixel bg-void">
                         <Command className="w-3 h-3 text-zinc-600" />
@@ -70,44 +45,8 @@ export function TelemetryBar() {
                 </div>
             </div>
 
-            {/* Live Telemetry */}
-            <div className="flex items-center gap-10 ml-8">
-                <div className="flex items-center gap-6">
-                    <div className="flex flex-col items-end">
-                        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Focus Score</span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm font-mono font-bold text-white leading-none">
-                                {focusScore.toFixed(1)}%
-                            </span>
-                            <div className="w-12 h-1 bg-zinc-900 rounded-full overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${focusScore}%` }}
-                                    className="h-full bg-cyber-red shadow-[0_0_10px_#FF3366]"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="w-px h-8 bg-muka-border" />
-
-                    <div className="flex flex-col items-end">
-                        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Deep Queue</span>
-                        <span className="text-sm font-mono font-bold text-electric-amber leading-none">
-                            {totalQueue.toString().padStart(2, '0')}
-                        </span>
-                    </div>
-
-                    <div className="w-px h-8 bg-muka-border" />
-
-                    <div className="flex flex-col items-end">
-                        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Focus ROI</span>
-                        <span className="text-sm font-mono font-bold text-neon-green leading-none">
-                            +{Math.round(energySaved / 60)}m
-                        </span>
-                    </div>
-                </div>
-
+            {/* Sync & Status */}
+            <div className="flex-1 flex items-center justify-end gap-3 md:gap-6 relative z-10 ml-auto">
                 {/* Sync Button */}
                 <button
                     onClick={triggerSync}

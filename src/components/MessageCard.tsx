@@ -3,7 +3,7 @@
 import { Message, ZoneType, useMukaStore } from '@/store/useMukaStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Check, Mail, BookOpen, Sparkles, ChevronDown } from 'lucide-react';
+import { Check, Mail, BookOpen, Sparkles, ChevronDown, RotateCcw } from 'lucide-react';
 import { useState, useEffect, memo } from 'react';
 
 interface MessageCardProps {
@@ -11,10 +11,11 @@ interface MessageCardProps {
     index: number;
     zoneType: ZoneType;
     isDragging?: boolean;
+    isHistory?: boolean;
 }
 
-export const MessageCard = memo(function MessageCard({ message, zoneType, isDragging }: MessageCardProps) {
-    const { dismissMessage } = useMukaStore();
+export const MessageCard = memo(function MessageCard({ message, zoneType, isDragging, isHistory }: MessageCardProps) {
+    const { dismissMessage, restoreMessage } = useMukaStore();
     const isInstant = zoneType === 'instant';
     const isScheduled = zoneType === 'scheduled';
     const isBatch = zoneType === 'batch';
@@ -73,6 +74,70 @@ export const MessageCard = memo(function MessageCard({ message, zoneType, isDrag
 
     const { displayTitle, displayBody, pType } = parseContent(message.content || '');
     const Icon = pType === 'classroom' ? BookOpen : Mail;
+
+    if (isHistory) {
+        return (
+            <motion.div
+                layout
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                onClick={(e) => {
+                    setIsExpanded(!isExpanded);
+                }}
+                className={cn(
+                    "group relative bg-[#111111]/40 border border-white/5 p-3 rounded-[16px] transition-all duration-400 overflow-hidden text-left cursor-pointer",
+                    `hover:border-${accentColor}/40 hover:bg-[#151515]/60`
+                )}
+            >
+                <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-2 overflow-hidden pr-2">
+                        <div className={cn("flex items-center justify-center w-5 h-5 rounded-md shrink-0",
+                            isInstant ? "bg-cyber-red/10 text-cyber-red" :
+                                isScheduled ? "bg-electric-amber/10 text-electric-amber" :
+                                    "bg-neon-green/10 text-neon-green"
+                        )}>
+                            <Icon className="w-3 h-3" />
+                        </div>
+                        <h3 className={cn("text-[13px] font-bold tracking-tight truncate transition-colors",
+                            isInstant ? "group-hover:text-cyber-red text-zinc-200" :
+                                isScheduled ? "group-hover:text-electric-amber text-zinc-200" :
+                                    "group-hover:text-neon-green text-zinc-200"
+                        )}>
+                            {displayTitle}
+                        </h3>
+                    </div>
+
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); restoreMessage(message.id, zoneType); }}
+                            className="flex items-center gap-1 px-2 py-1 bg-surface hover:bg-zinc-800 text-zinc-300 hover:text-white text-[9px] font-black rounded-[6px] transition-all active:scale-95 uppercase tracking-widest border border-white/5 shadow-md shadow-black/50"
+                            title="Restore"
+                        >
+                            <RotateCcw className="w-3 h-3" /> Restore
+                        </button>
+                    </div>
+                </div>
+
+                <AnimatePresence>
+                    {isExpanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                            animate={{ height: 'auto', opacity: 1, marginTop: 8 }}
+                            exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="p-3 rounded-xl bg-black/40 border border-white/5">
+                                <p className="text-[12px] leading-[1.6] text-zinc-400 font-normal whitespace-pre-wrap">
+                                    {displayBody}
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.div>
+        );
+    }
 
     return (
         <motion.div

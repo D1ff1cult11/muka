@@ -22,8 +22,6 @@ interface MukaState {
     historyInstant: Message[];
     historyScheduled: Message[];
     historyBatch: Message[];
-    energySaved: number;
-    focusScore: number;
     isFocusModeActive: boolean;
     isWindowActive: boolean;
     searchQuery: string;
@@ -37,6 +35,7 @@ interface MukaState {
     moveMessage: (messageId: string, sourceZone: ZoneType, destinationZone: ZoneType, destinationIndex: number) => void;
     fetchFeed: (manual?: boolean) => Promise<void>;
     dismissMessage: (messageId: string, zone: ZoneType) => void;
+    restoreMessage: (messageId: string, zone: ZoneType) => void;
     snoozeMessage: (messageId: string, zone: ZoneType) => void;
     subscribeToNotifications: (userId: string) => () => void;
 }
@@ -48,8 +47,6 @@ export const useMukaStore = create<MukaState>((set, get) => ({
     historyInstant: [],
     historyScheduled: [],
     historyBatch: [],
-    energySaved: 0,
-    focusScore: 100,
     isFocusModeActive: false,
     isWindowActive: false,
     searchQuery: '',
@@ -204,7 +201,33 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             // Persist to backend
             fetch(`/api/notifications/${messageId}`, {
                 method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'dismiss' })
+            }).catch(console.error);
+        }
+    },
+
+    restoreMessage: async (messageId, zone) => {
+        const historyKey = zone === 'instant' ? 'historyInstant' : zone === 'scheduled' ? 'historyScheduled' : 'historyBatch';
+        const historyList = [...get()[historyKey]];
+        const index = historyList.findIndex(m => m.id === messageId);
+
+        if (index !== -1) {
+            const [restoredMsg] = historyList.splice(index, 1);
+            const activeList = [...get()[zone]];
+            activeList.unshift(restoredMsg);
+
+            set({
+                [historyKey]: historyList,
+                [zone]: activeList
+            } as any);
+
+            toast.success('Signal Restored');
+
+            fetch(`/api/notifications/${messageId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'restore' })
             }).catch(console.error);
         }
     },
@@ -248,17 +271,9 @@ export const useMukaStore = create<MukaState>((set, get) => ({
         } else {
             destinationList.splice(destinationIndex, 0, updatedMessage);
 
-            let newEnergySaved = state.energySaved;
-            if (destinationZone === 'batch') newEnergySaved += 15;
-            else if (sourceZone === 'batch') newEnergySaved -= 15;
-
-            const newFocusScore = Math.max(0, Math.min(100, state.focusScore + (destinationZone === 'instant' ? -5 : 2)));
-
             set({
                 [sourceZone]: sourceList,
                 [destinationZone]: destinationList,
-                energySaved: newEnergySaved,
-                focusScore: newFocusScore
             });
 
             toast(`Reclassified to ${destinationZone.toUpperCase()}`);

@@ -37,55 +37,66 @@ export interface ExtractedAssignment {
 }
 
 /**
- * Retrieves the snippet and body of the most recent unread email.
+ * Retrieves the snippet and body of the most recent emails.
  */
-export async function fetchLatestEmail(auth: Auth.OAuth2Client): Promise<ExtractedEmail | null> {
+export async function fetchRecentEmails(auth: Auth.OAuth2Client): Promise<ExtractedEmail[]> {
     const gmail = google.gmail({ version: 'v1', auth });
 
-    // Find the latest unread email in the inbox
+    // Find the latest emails in the inbox (read or unread)
     const listRes = await gmail.users.messages.list({
         userId: 'me',
-        q: 'is:unread in:inbox',
-        maxResults: 1,
+        q: 'in:inbox',
+        maxResults: 3,
     });
 
     const messages = listRes.data.messages;
     if (!messages || messages.length === 0) {
-        return null;
+        return [];
     }
 
-    const messageId = messages[0].id!;
-    const msgRes = await gmail.users.messages.get({
-        userId: 'me',
-        id: messageId,
-        format: 'full',
-    });
+    const extracted: ExtractedEmail[] = [];
 
-    const { snippet, payload } = msgRes.data;
+    for (const msg of messages) {
+        if (!msg.id) continue;
 
-    // Extract headers
-    const headers = payload?.headers || [];
-    const subject = headers.find((h) => h.name === 'Subject')?.value || 'No Subject';
-    const sender = headers.find((h) => h.name === 'From')?.value || 'Unknown Sender';
+        try {
+            const msgRes = await gmail.users.messages.get({
+                userId: 'me',
+                id: msg.id,
+                format: 'full',
+            });
 
-    // Extract body (prefer plain text)
-    let body = snippet || '';
-    if (payload?.parts) {
-        const textPart = payload.parts.find((part) => part.mimeType === 'text/plain');
-        if (textPart?.body?.data) {
-            body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
+            const { snippet, payload } = msgRes.data;
+
+            // Extract headers
+            const headers = payload?.headers || [];
+            const subject = headers.find((h: any) => h.name === 'Subject')?.value || 'No Subject';
+            const sender = headers.find((h: any) => h.name === 'From')?.value || 'Unknown Sender';
+
+            // Extract body (prefer plain text)
+            let body = snippet || '';
+            if (payload?.parts) {
+                const textPart = payload.parts.find((part: any) => part.mimeType === 'text/plain');
+                if (textPart?.body?.data) {
+                    body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
+                }
+            } else if (payload?.body?.data) {
+                body = Buffer.from(payload.body.data, 'base64').toString('utf-8');
+            }
+
+            extracted.push({
+                id: msg.id,
+                snippet: snippet || '',
+                body,
+                sender,
+                subject,
+            });
+        } catch (error) {
+            console.error(`Error fetching email ${msg.id}`, error);
         }
-    } else if (payload?.body?.data) {
-        body = Buffer.from(payload.body.data, 'base64').toString('utf-8');
     }
 
-    return {
-        id: messageId,
-        snippet: snippet || '',
-        body,
-        sender,
-        subject,
-    };
+    return extracted;
 }
 
 /**
@@ -145,9 +156,11 @@ export async function fetchUpcomingAssignments(auth: Auth.OAuth2Client): Promise
                     }
                 }
             }
-        } catch (error) {
-            // Some courses might have coursework disabled for the user, catch and continue
-            console.error(`Error fetching coursework for course ${course.id}`, error);
+        } catch (error: any) {
+            // Some courses might have coursework disabled for the user (400 invalid_request)
+            // Catch, print a short debug warning, and continue to the next course instead of crashing
+            console.warn(`[GClassroom Warning] Skipping course ${course.id}: ${error?.message || 'invalid_request'}`);
+            continue;
         }
     }
 

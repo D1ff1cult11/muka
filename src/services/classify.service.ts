@@ -48,9 +48,32 @@ export async function classifyText(text: string): Promise<ClassificationResult> 
 
         const data = await response.json()
 
-        // HF returns arrays of labels sorted by score (highest first)
-        const topLabel: Zone = data.labels[0] as Zone
-        const topScore: number = data.scores[0] as number
+        // Variable to hold parsed results
+        let topLabel: Zone = 'batch'
+        let topScore: number = 0
+
+        // Handle Format 1: Array of objects (e.g. [{ label: 'scheduled', score: 0.71 }, ...])
+        if (Array.isArray(data) && data.length > 0 && 'label' in data[0] && 'score' in data[0]) {
+            // Find the object with the highest score
+            const bestMatch = data.reduce((prev: any, current: any) => (prev.score > current.score) ? prev : current)
+            topLabel = bestMatch.label.toLowerCase() as Zone
+            topScore = bestMatch.score
+        }
+        // Handle Format 2: Object with labels and scores arrays (e.g. { labels: ['scheduled', ...], scores: [0.71, ...] })
+        else if (data && data.labels && data.scores && Array.isArray(data.labels) && Array.isArray(data.scores)) {
+            topLabel = data.labels[0].toLowerCase() as Zone
+            topScore = data.scores[0]
+        }
+        // Fallback: Unrecognized response shape
+        else {
+            console.error('[HuggingFace Fallback]: Unexpected AI response shape', data)
+            return {
+                zone: 'instant', // Fallback to instant so user doesn't miss anything 
+                confidence: 0,
+                ai_model: 'fallback',
+                fallback_used: true,
+            }
+        }
 
         const fallback_used = topScore < CONFIDENCE_THRESHOLD
 
@@ -93,7 +116,6 @@ export async function ingestAndClassify(payload: IngestPayload, userId: string):
             source: payload.source,
             sender: payload.sender ?? null,
             external_id: payload.external_id ?? null,
-            scheduled_for: payload.scheduled_for ?? null,
             zone: classification.zone,
             confidence: classification.confidence,
             ai_model: classification.ai_model,

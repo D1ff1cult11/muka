@@ -1,117 +1,222 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Search, Filter, ArrowUpDown, MoreHorizontal, ExternalLink } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { Search, Mail, BookOpen, MessageCircle, Shield } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const MOCK_DATA = [
-    { id: '01', time: '10:42:15', source: 'GMAIL', text: 'URGENT: Semester Registration Deadline', class: 'High-Priority', confidence: 0.98 },
-    { id: '02', time: '10:38:02', source: 'WHATSAPP', text: 'Lecture hall changed for CS301', class: 'Instant', confidence: 0.94 },
-    { id: '03', time: '10:30:44', source: 'CANVAS', text: 'New announcement in Physics II', class: 'Scheduled', confidence: 0.89 },
-    { id: '04', time: '09:15:21', source: 'SYSTEM', text: 'Kernel shielding optimized successfully', class: 'Batch', confidence: 1.00 },
-    { id: '05', time: '08:44:12', source: 'GMAIL', text: 'Promotional: Buy new university hoodies!', class: 'Spam', confidence: 0.99 },
-]
+type ZoneType = 'instant' | 'scheduled' | 'batch';
+
+export interface NotificationRow {
+    id: string;
+    raw_text: string;
+    title: string | null;
+    source: string;
+    zone: ZoneType;
+    created_at: string;
+}
 
 export default function LedgerPage() {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilter, setActiveFilter] = useState('All');
+    const [messages, setMessages] = useState<NotificationRow[]>([]);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const supabase = createClient();
+
+    useEffect(() => {
+        async function fetchMessages() {
+            // Using "notifications" table as requested by the real DB,
+            // while fulfilling the prompt's intent for the "messages" integration.
+            const { data, error } = await supabase
+                .from('notifications')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (data && !error) {
+                setMessages(data as NotificationRow[]);
+            }
+        }
+        fetchMessages();
+    }, [supabase]);
+
+    const filteredMessages = messages.filter((msg) => {
+        const matchFilter = activeFilter === 'All' || msg.source.toLowerCase() === activeFilter.toLowerCase();
+        const matchSearch = searchQuery === '' ||
+            msg.raw_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (msg.title && msg.title.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchFilter && matchSearch;
+    });
+
+    const getSourceIcon = (source: string) => {
+        const norm = source.toLowerCase();
+        if (norm === 'gmail') return <Mail className="w-4 h-4 text-zinc-400" />;
+        if (norm === 'classroom') return <BookOpen className="w-4 h-4 text-zinc-400" />;
+        if (norm === 'whatsapp') return <MessageCircle className="w-4 h-4 text-zinc-400" />;
+        return <Shield className="w-4 h-4 text-zinc-400" />;
+    };
+
+    const getZoneColor = (zone: string) => {
+        if (zone === 'instant') return 'bg-cyber-red shadow-[0_0_8px_rgba(255,42,85,0.6)]'; // Stream (Red)
+        if (zone === 'scheduled') return 'bg-electric-amber shadow-[0_0_8px_rgba(255,183,35,0.6)]'; // Timeline (Yellow/Amber)
+        if (zone === 'batch') return 'bg-neon-green shadow-[0_0_8px_rgba(57,255,20,0.6)]'; // Vault (Green)
+        return 'bg-zinc-500';
+    };
+
+    const getZoneLabel = (zone: string) => {
+        if (zone === 'instant') return 'Stream';
+        if (zone === 'scheduled') return 'Timeline';
+        if (zone === 'batch') return 'Vault';
+        return 'Unknown';
+    };
+
+    const formatTime = (isoString: string) => {
+        const date = new Date(isoString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+        return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    };
+
+    const handleCorrection = async (id: string, newZone: ZoneType) => {
+        // Optimistic update
+        setMessages(messages.map(m => m.id === id ? { ...m, zone: newZone } : m));
+        setExpandedId(null);
+
+        // Update DB
+        await supabase.from('notifications').update({ zone: newZone }).eq('id', id);
+
+        // Optionally log to feedback API
+        fetch('/api/feedback', {
+            method: 'POST',
+            body: JSON.stringify({ messageId: id, correctedZone: newZone }),
+            headers: { 'Content-Type': 'application/json' }
+        }).catch(() => { });
+    };
+
+    const filters = ['All', 'Gmail', 'Classroom', 'WhatsApp'];
+
     return (
-        <div className="p-10 space-y-8">
-            {/* Header Stage */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-extrabold tracking-tight text-white uppercase">The Ledger</h1>
-                    <p className="text-xs font-medium text-zinc-500 uppercase tracking-[0.2em] mt-1">Deterministic Relational Archive</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-surface border-subpixel rounded-xl text-[10px] font-bold text-zinc-400 hover:text-white transition-all uppercase tracking-widest">
-                        <Filter className="w-3.5 h-3.5" />
-                        Export CSV
-                    </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-cyber-red text-white rounded-xl text-[10px] font-black hover:bg-cyber-red/80 transition-all uppercase tracking-widest shadow-lg shadow-cyber-red/20">
-                        Manual Backup
-                    </button>
-                </div>
-            </div>
+        <div className="min-h-screen bg-neutral-950 p-6 md:p-12 font-sans overflow-y-auto">
+            <div className="max-w-4xl mx-auto space-y-10 mt-8">
 
-            {/* Semantic Search Area */}
-            <div className="relative">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600" />
-                <input
-                    type="text"
-                    placeholder="COMPLEX SEMANTIC SEARCH EX: 'Find all emails from the Dean regarding financial aid in the last 48 hours'"
-                    className="w-full bg-[#080808] border-[0.5px] border-muka-border focus:border-cyber-red/40 rounded-2xl py-5 pl-14 pr-6 text-sm font-medium text-white placeholder-zinc-700 outline-none transition-all shadow-2xl"
-                />
-            </div>
+                {/* 1. The Universal Search Bar */}
+                <div className="relative group mx-auto w-full max-w-2xl">
+                    <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
+                        <Search className="w-6 h-6 text-zinc-500 group-focus-within:text-white transition-colors" />
+                    </div>
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search emails, assignments, or campus chats..."
+                        className="w-full bg-neutral-900/80 backdrop-blur-md border border-neutral-800 focus:border-neutral-600 rounded-full py-5 pl-16 pr-8 text-lg font-medium text-white placeholder-zinc-500 outline-none transition-all shadow-xl hover:shadow-2xl hover:bg-neutral-900"
+                    />
+                </div>
 
-            {/* Data Table */}
-            <div className="glass-card rounded-3xl overflow-hidden border-subpixel">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="border-b-[0.5px] border-muka-border bg-white/[0.01]">
-                            <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Timestamp</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Source</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Intercepted Payload</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Classification</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] text-right">Confidence</th>
-                            <th className="px-6 py-4"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y-[0.5px] divide-muka-border">
-                        {MOCK_DATA.map((row) => (
-                            <tr key={row.id} className="group hover:bg-white/[0.02] transition-colors">
-                                <td className="px-6 py-5">
-                                    <span className="text-[12px] font-mono font-bold text-zinc-400 group-hover:text-white transition-colors">
-                                        {row.time}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-5">
-                                    <span className="px-2 py-1 rounded-md bg-zinc-900 border border-zinc-700 text-[9px] font-black text-white tracking-widest uppercase">
-                                        {row.source}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-5">
-                                    <p className="text-[13px] font-medium text-zinc-300 group-hover:text-white transition-colors line-clamp-1 max-w-sm font-sans">
-                                        {row.text}
-                                    </p>
-                                </td>
-                                <td className="px-6 py-5">
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-1.5 h-1.5 rounded-full ${row.class === 'Instant' ? 'bg-cyber-red' :
-                                                row.class === 'Scheduled' ? 'bg-electric-amber' :
-                                                    row.class === 'Batch' ? 'bg-neon-green' : 'bg-zinc-700'
-                                            }`} />
-                                        <span className="text-[11px] font-bold text-zinc-400 capitalize">{row.class}</span>
+                {/* 2. The Source Filters */}
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                    {filters.map((filter) => (
+                        <button
+                            key={filter}
+                            onClick={() => setActiveFilter(filter)}
+                            className={`px-6 py-2.5 rounded-full text-sm font-semibold tracking-wide transition-all ${activeFilter === filter
+                                    ? 'bg-neutral-800 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] border border-neutral-700'
+                                    : 'bg-neutral-900/50 text-zinc-500 hover:text-zinc-300 hover:bg-neutral-800/80 border border-transparent'
+                                }`}
+                        >
+                            {filter}
+                        </button>
+                    ))}
+                </div>
+
+                {/* 3. The Smart Feed */}
+                <div className="space-y-4 max-w-2xl mx-auto pb-20">
+                    <AnimatePresence>
+                        {filteredMessages.map((msg) => (
+                            <motion.div
+                                layout
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                key={msg.id}
+                                className="bg-neutral-900/40 border border-neutral-800/50 rounded-3xl p-5 hover:bg-neutral-900/80 transition-all cursor-pointer overflow-hidden shadow-sm hover:shadow-md"
+                                onClick={() => setExpandedId(expandedId === msg.id ? null : msg.id)}
+                            >
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-neutral-800/50 rounded-2xl shrink-0">
+                                        {getSourceIcon(msg.source)}
                                     </div>
-                                </td>
-                                <td className="px-6 py-5 text-right">
-                                    <span className="text-[12px] font-mono font-black text-neon-green">
-                                        {(row.confidence * 100).toFixed(1)}%
-                                    </span>
-                                </td>
-                                <td className="px-6 py-5">
-                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-all">
-                                            <ExternalLink className="w-4 h-4" />
-                                        </button>
-                                        <button className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-all">
-                                            <MoreHorizontal className="w-4 h-4" />
-                                        </button>
+                                    <div className="flex-1 min-w-0 pt-0.5">
+                                        <div className="flex items-center justify-between gap-4 mb-2">
+                                            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                                                {msg.source}
+                                            </span>
+                                            <span className="text-xs font-medium text-zinc-600">
+                                                {formatTime(msg.created_at)}
+                                            </span>
+                                        </div>
+                                        <p className="text-[15px] leading-relaxed text-zinc-300 line-clamp-2">
+                                            {msg.title && <span className="font-semibold text-white mr-2">{msg.title}</span>}
+                                            {msg.raw_text}
+                                        </p>
                                     </div>
-                                </td>
-                            </tr>
+                                    <div className="flex flex-col items-center justify-center h-full pt-1 shrink-0">
+                                        <div className={`w-2.5 h-2.5 rounded-full ${getZoneColor(msg.zone)}`} title={getZoneLabel(msg.zone)} />
+                                    </div>
+                                </div>
+
+                                {/* 4. The Correction Interaction */}
+                                <AnimatePresence>
+                                    {expandedId === msg.id && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="pt-6 pb-2 border-t border-neutral-800/50 mt-5">
+                                                <p className="text-sm font-medium text-zinc-400 mb-4 text-center">
+                                                    Did we sort this wrong?
+                                                </p>
+                                                <div className="flex items-center justify-center gap-3">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleCorrection(msg.id, 'instant'); }}
+                                                        className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-cyber-red/20 text-xs font-bold text-zinc-300 hover:text-cyber-red transition-all border border-neutral-700 hover:border-cyber-red/50 uppercase tracking-wider"
+                                                    >
+                                                        Stream
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleCorrection(msg.id, 'scheduled'); }}
+                                                        className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-electric-amber/20 text-xs font-bold text-zinc-300 hover:text-electric-amber transition-all border border-neutral-700 hover:border-electric-amber/50 uppercase tracking-wider"
+                                                    >
+                                                        Timeline
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleCorrection(msg.id, 'batch'); }}
+                                                        className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neon-green/20 text-xs font-bold text-zinc-300 hover:text-neon-green transition-all border border-neutral-700 hover:border-neon-green/50 uppercase tracking-wider"
+                                                    >
+                                                        Vault
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </motion.div>
                         ))}
-                    </tbody>
-                </table>
-            </div>
+                    </AnimatePresence>
 
-            {/* Pagination / Footer Stats */}
-            <div className="flex items-center justify-between pb-10">
-                <span className="text-[10px] font-mono font-bold text-zinc-600 uppercase tracking-widest">
-                    Showing 01 - 05 of 14,202 Intercepts
-                </span>
-                <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-surface border-subpixel rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition-all">Previous</button>
-                    <button className="px-4 py-2 bg-surface border-subpixel rounded-lg text-xs font-bold text-white transition-all">Next</button>
+                    {messages.length > 0 && filteredMessages.length === 0 && (
+                        <div className="text-center py-20">
+                            <p className="text-zinc-500 font-medium">No results found for your search.</p>
+                        </div>
+                    )}
                 </div>
+
             </div>
         </div>
-    )
+    );
 }

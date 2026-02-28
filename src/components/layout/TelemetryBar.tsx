@@ -1,11 +1,27 @@
 'use client'
 
-import { Search, Command, Activity, Zap, Shield } from 'lucide-react'
+import { Search, Command, Activity, Zap, Shield, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
+import { useMukaStore } from '@/store/useMukaStore'
+import { cn } from '@/lib/utils'
 
 export function TelemetryBar() {
     const [metrics, setMetrics] = useState({ focus: 100, queue: 14, saved: 42 })
+    const [isSyncing, setIsSyncing] = useState(false)
+    const { fetchFeed } = useMukaStore()
+
+    const triggerSync = async () => {
+        setIsSyncing(true)
+        try {
+            await fetch('/api/ingest/google', { method: 'POST' })
+            await fetchFeed()
+        } catch (error) {
+            console.error('Failed to sync:', error)
+        } finally {
+            setIsSyncing(false)
+        }
+    }
 
     // Simulate ticking telemetry
     useEffect(() => {
@@ -74,6 +90,16 @@ export function TelemetryBar() {
                         </span>
                     </div>
                 </div>
+
+                {/* Manual Sync Button */}
+                <button
+                    onClick={triggerSync}
+                    disabled={isSyncing}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-subpixel bg-surface hover:bg-muka-border transition-colors text-[10px] font-bold font-mono text-zinc-400 hover:text-white disabled:opacity-50"
+                >
+                    <RefreshCw className={cn("w-3.5 h-3.5", isSyncing && "animate-spin text-neon-green")} />
+                    {isSyncing ? "SYNCING..." : "SYNC NOW"}
+                </button>
 
                 {/* Status Indicator */}
                 <div className="flex items-center gap-3 px-4 py-2 bg-neon-green/5 border border-neon-green/20 rounded-xl">

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getGoogleAuth, fetchLatestEmail, fetchUpcomingAssignments } from '@/lib/google';
+import { getGoogleAuth, fetchRecentEmails, fetchUpcomingAssignments } from '@/lib/google';
 import { ingestAndClassify } from '@/services/classify.service';
 
 export async function POST(req: NextRequest) {
@@ -28,10 +28,10 @@ export async function POST(req: NextRequest) {
             errors: [] as string[],
         };
 
-        // 1. Fetch and ingest latest email
+        // 1. Fetch and ingest latest emails
         try {
-            const email = await fetchLatestEmail(auth);
-            if (email) {
+            const emails = await fetchRecentEmails(auth);
+            for (const email of emails) {
                 await ingestAndClassify({
                     raw_text: `Subject: ${email.subject}\n\n${email.body}`,
                     source: 'gmail',
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
                 results.emailsIngested++;
             }
         } catch (e: any) {
+            console.error("Gmail Fetch Error", e);
             results.errors.push(`Gmail Error: ${e.message}`);
         }
 
@@ -51,13 +52,15 @@ export async function POST(req: NextRequest) {
                     raw_text: `Assignment: ${assignment.title}\nDue: ${assignment.dueDate.toLocaleString()}\n\n${assignment.description}`,
                     source: 'classroom',
                     sender: 'Google Classroom',
-                    scheduled_for: assignment.dueDate.toISOString(),
                 }, user.id);
                 results.assignmentsIngested++;
             }
         } catch (e: any) {
+            console.error("Classroom Fetch Error", e);
             results.errors.push(`Classroom Error: ${e.message}`);
         }
+
+        console.log("== GOOGLE SYNC RESULTS ==", results);
 
         return NextResponse.json({
             message: 'Google sync complete',

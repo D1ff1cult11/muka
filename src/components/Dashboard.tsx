@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export function Dashboard() {
-    const { instant, scheduled, batch, moveMessage, fetchFeed, fetchStats, subscribeToNotifications } = useMukaStore();
+    const { instant, scheduled, batch, moveMessage, fetchFeed, fetchStats, subscribeToNotifications, isFocusModeActive } = useMukaStore();
     const [userId, setUserId] = useState<string | null>(null);
 
     // Hydration fix for DragDropContext (avoids SSR mismatch)
@@ -53,6 +53,7 @@ export function Dashboard() {
 
         if (!destination) return;
         if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+        if (isFocusModeActive) return; // Prevent moves during focus
 
         moveMessage(
             draggableId,

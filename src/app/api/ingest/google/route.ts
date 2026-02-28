@@ -1,7 +1,6 @@
-export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server';
-import { getGoogleAuth, fetchLatestEmail, fetchUpcomingAssignments } from '@/lib/google';
 import { createClient } from '@/lib/supabase/server';
+import { getGoogleAuth, fetchLatestEmail, fetchUpcomingAssignments } from '@/lib/google';
 import { ingestAndClassify } from '@/services/classify.service';
 
 export async function POST(req: NextRequest) {
@@ -52,6 +51,7 @@ export async function POST(req: NextRequest) {
                     raw_text: `Assignment: ${assignment.title}\nDue: ${assignment.dueDate.toLocaleString()}\n\n${assignment.description}`,
                     source: 'classroom',
                     sender: 'Google Classroom',
+                    scheduled_for: assignment.dueDate.toISOString(),
                 }, user.id);
                 results.assignmentsIngested++;
             }

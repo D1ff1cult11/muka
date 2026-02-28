@@ -8,39 +8,47 @@ import { ingestAndClassify, getNotificationsByZone } from '@/services/classify.s
  * to minimize network overhead and latency in serverless environments.
  */
 async function fetchGmail(accessToken: string, cachedIds: string[]) {
-    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=5', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    try {
+        const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
 
-    if (!response.ok) throw new Error('Gmail API fetch failed');
-    const data = await response.json();
+        if (!response.ok) {
+            console.error('Gmail API fetch failed:', await response.text());
+            return [];
+        }
+        const data = await response.json();
 
-    if (!data.messages) return [];
+        if (!data.messages) return [];
 
-    // OPTIMIZATION: Filter out messages we already have before fetching details
-    const newMessages = data.messages.filter((msg: any) => !cachedIds.includes(msg.id));
+        // OPTIMIZATION: Filter out messages we already have before fetching details
+        const newMessages = data.messages.filter((msg: any) => !cachedIds.includes(msg.id));
 
-    // Fetch detailed info ONLY for new messages
-    const details = await Promise.all(
-        newMessages.map(async (msg: any) => {
-            const res = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
-            if (!res.ok) return null;
-            const detail = await res.json();
+        // Fetch detailed info ONLY for new messages
+        const details = await Promise.all(
+            newMessages.map(async (msg: any) => {
+                const res = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`, {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                });
+                if (!res.ok) return null;
+                const detail = await res.json();
 
-            const subject = detail.payload.headers.find((h: any) => h.name === 'Subject')?.value || 'No Subject';
-            return {
-                id: detail.id,
-                source: 'gmail',
-                title: subject,
-                snippet: detail.snippet,
-                timestamp: new Date(parseInt(detail.internalDate)).toISOString(),
-            };
-        })
-    );
+                const subject = detail.payload.headers.find((h: any) => h.name === 'Subject')?.value || 'No Subject';
+                return {
+                    id: detail.id,
+                    source: 'gmail',
+                    title: subject,
+                    snippet: detail.snippet,
+                    timestamp: new Date(parseInt(detail.internalDate)).toISOString(),
+                };
+            })
+        );
 
-    return details.filter(Boolean) as any[]; // Remove nulls from failed individual fetches
+        return details.filter(Boolean) as any[];
+    } catch (error) {
+        console.error('fetchGmail overall error:', error);
+        return [];
+    }
 }
 
 /**
@@ -48,23 +56,30 @@ async function fetchGmail(accessToken: string, cachedIds: string[]) {
  * Fetches the 5 most recent or active assignments from Google Classroom.
  */
 async function fetchClassroom(accessToken: string) {
-    // Fetching courses first to get course ID, or using '-' for all courses
-    const response = await fetch('https://classroom.googleapis.com/v1/courses/-/courseWork?pageSize=5', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    try {
+        const response = await fetch('https://classroom.googleapis.com/v1/courses/-/courseWork?pageSize=50', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
 
-    if (!response.ok) throw new Error('Google Classroom API fetch failed');
-    const data = await response.json();
+        if (!response.ok) {
+            console.error('Google Classroom API fetch failed:', await response.text());
+            return [];
+        }
+        const data = await response.json();
 
-    if (!data.courseWork) return [];
+        if (!data.courseWork) return [];
 
-    return data.courseWork.map((work: any) => ({
-        id: work.id,
-        source: 'classroom',
-        title: work.title,
-        snippet: work.description || 'No description provided.',
-        timestamp: work.creationTime,
-    }));
+        return data.courseWork.map((work: any) => ({
+            id: work.id,
+            source: 'classroom',
+            title: work.title,
+            snippet: work.description || 'No description provided.',
+            timestamp: work.creationTime,
+        }));
+    } catch (error) {
+        console.error('fetchClassroom overall error:', error);
+        return [];
+    }
 }
 
 /**

@@ -21,13 +21,17 @@ interface MukaState {
     focusScore: number;
     isFocusModeActive: boolean;
     isWindowActive: boolean;
+    focusTimeLeft: number; // in seconds
+    focusDuration: number; // initial duration in seconds
     toggleFocusMode: () => void;
+    startFocusSession: (durationMinutes: number) => void;
+    stopFocusSession: () => void;
+    decrementTimer: () => void;
     moveMessage: (messageId: string, sourceZone: ZoneType, destinationZone: ZoneType, destinationIndex: number) => void;
     fetchFeed: () => Promise<void>;
     dismissMessage: (messageId: string, zone: ZoneType) => void;
     snoozeMessage: (messageId: string, zone: ZoneType) => void;
     subscribeToNotifications: (userId: string) => () => void;
-
 }
 
 export const useMukaStore = create<MukaState>((set, get) => ({
@@ -36,9 +40,34 @@ export const useMukaStore = create<MukaState>((set, get) => ({
     batch: [],
     energySaved: 0,
     focusScore: 100,
-    isFocusModeActive: true,
+    isFocusModeActive: false,
     isWindowActive: false,
-    toggleFocusMode: () => set((state) => ({ isFocusModeActive: !state.isFocusModeActive })),
+    focusTimeLeft: 0,
+    focusDuration: 25 * 60, // Default 25 mins
+
+    toggleFocusMode: () => {
+        const active = !get().isFocusModeActive;
+        set({
+            isFocusModeActive: active,
+            focusTimeLeft: active ? get().focusDuration : 0
+        });
+    },
+
+    startFocusSession: (durationMinutes) => {
+        const durationSeconds = durationMinutes * 60;
+        set({
+            isFocusModeActive: true,
+            focusDuration: durationSeconds,
+            focusTimeLeft: durationSeconds
+        });
+    },
+
+    stopFocusSession: () => set({ isFocusModeActive: false, focusTimeLeft: 0 }),
+
+    decrementTimer: () => set((state) => ({
+        focusTimeLeft: Math.max(0, state.focusTimeLeft - 1),
+        isFocusModeActive: state.focusTimeLeft > 1 ? state.isFocusModeActive : false
+    })),
 
     fetchFeed: async () => {
         const { instant, scheduled, batch } = get();

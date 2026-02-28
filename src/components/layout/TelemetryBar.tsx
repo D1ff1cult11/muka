@@ -7,7 +7,7 @@ import { useMukaStore } from '@/store/useMukaStore'
 import { cn } from '@/lib/utils'
 
 export function TelemetryBar() {
-    const { energySaved, focusScore, instant, scheduled, batch, fetchFeed } = useMukaStore()
+    const { energySaved, focusScore, instant, scheduled, batch, fetchFeed, searchQuery, setSearchQuery } = useMukaStore()
     const [inputValue, setInputValue] = useState('')
     const [isIngesting, setIsIngesting] = useState(false)
     const [isSyncing, setIsSyncing] = useState(false)
@@ -26,6 +26,7 @@ export function TelemetryBar() {
 
                 if (res.ok) {
                     setInputValue('')
+                    setSearchQuery('')
                     await fetchFeed()
                 }
             } catch (error) {
@@ -57,10 +58,13 @@ export function TelemetryBar() {
                     <input
                         type="text"
                         value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
+                        onChange={(e) => {
+                            setInputValue(e.target.value)
+                            setSearchQuery(e.target.value)
+                        }}
                         onKeyDown={handleIngest}
                         disabled={isIngesting}
-                        placeholder={isIngesting ? "CLASSIFYING..." : "GLOBAL COMMAND PALETTE"}
+                        placeholder={isIngesting ? "CLASSIFYING..." : "SEARCH OR SUBMIT COMMAND..."}
                         className="w-full bg-surface border-[0.5px] border-muka-border focus:border-cyber-red/50 focus:bg-black rounded-xl py-2.5 pl-12 pr-12 text-[12px] font-bold tracking-[0.1em] text-zinc-200 placeholder-zinc-600 outline-none transition-all disabled:opacity-50"
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-1 rounded border-subpixel bg-void">

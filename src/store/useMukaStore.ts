@@ -32,6 +32,8 @@ interface MukaState {
     dismissMessage: (messageId: string, zone: ZoneType) => void;
     snoozeMessage: (messageId: string, zone: ZoneType) => void;
     subscribeToNotifications: (userId: string) => () => void;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
 }
 
 export const useMukaStore = create<MukaState>((set, get) => ({
@@ -44,6 +46,9 @@ export const useMukaStore = create<MukaState>((set, get) => ({
     isWindowActive: false,
     focusTimeLeft: 0,
     focusDuration: 25 * 60, // Default 25 mins
+    searchQuery: '',
+
+    setSearchQuery: (query) => set({ searchQuery: query }),
 
     toggleFocusMode: () => {
         const active = !get().isFocusModeActive;

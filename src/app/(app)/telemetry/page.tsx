@@ -13,6 +13,7 @@ interface TelemetryStats {
     total: number
     instantCount: number
     noiseMsgs: number
+    accuracy: number
     chartDays: { label: string; focus: number; noise: number }[]
     noiseSources: { label: string; pct: number }[]
     heatmap: ('hot' | 'warm' | 'cool' | 'cold')[]
@@ -56,7 +57,7 @@ export default function TelemetryPage() {
             setLoading(true)
             setError(null)
             try {
-                const res = await fetch('/api/telemetry/stats')
+                const res = await fetch(`/api/telemetry/stats?range=${activeRange}`)
                 if (!res.ok) throw new Error(`Server error ${res.status}`)
                 const data: TelemetryStats = await res.json()
                 setStats(data)
@@ -67,7 +68,7 @@ export default function TelemetryPage() {
             }
         }
         fetchStats()
-    }, [])
+    }, [activeRange])
 
     // ── Derived sparkline paths from real chart data ────────────────────────
     // Map 7 days of focus/noise counts into SVG path coordinates
@@ -156,7 +157,7 @@ export default function TelemetryPage() {
             {
                 id: 'focus',
                 label: 'Focus Score',
-                description: 'Better when noise ratio is low',
+                description: 'Attention signal strength',
                 value: stats.focusScore.toString(),
                 unit: '%',
                 change: `${stats.focusScore >= 75 ? '+' : ''}${stats.focusScore}%`,
@@ -166,6 +167,20 @@ export default function TelemetryPage() {
                 accentCls: 'text-electric-amber',
                 bgGlow: 'bg-electric-amber',
                 sparkPath: buildSparkPath(focusValues, false),
+            },
+            {
+                id: 'safety',
+                label: 'AI Accuracy',
+                description: 'Shield integrity rating',
+                value: (stats.accuracy ?? 100).toString(),
+                unit: '%',
+                change: `${(stats.accuracy ?? 100) >= 90 ? 'High' : 'Low'}`,
+                positive: (stats.accuracy ?? 100) >= 90,
+                icon: Brain,
+                accent: '#BC13FE',
+                accentCls: 'text-cyber-violet',
+                bgGlow: 'bg-cyber-violet',
+                sparkPath: buildSparkPath(focusValues, true),
             },
         ]
         : []
@@ -227,9 +242,9 @@ export default function TelemetryPage() {
             )}
 
             {/* ── Stat Cards ─────────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {loading
-                    ? Array.from({ length: 3 }).map((_, i) => (
+                    ? Array.from({ length: 4 }).map((_, i) => (
                         <div key={i} className="glass-card rounded-[28px] border-subpixel p-6 h-40 animate-pulse bg-white/[0.02]" />
                     ))
                     : statCards.map((s, i) => (

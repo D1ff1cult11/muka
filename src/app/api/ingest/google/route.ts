@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 import { getGoogleAuth, fetchLatestEmail, fetchUpcomingAssignments } from '@/lib/google';
 import { ingestAndClassify } from '@/services/classify.service';
 
@@ -10,6 +11,13 @@ export async function POST(req: NextRequest) {
 
         if (!accessToken) {
             return NextResponse.json({ error: '`accessToken` is required.' }, { status: 400 });
+        }
+
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const auth = getGoogleAuth(accessToken, refreshToken);
@@ -28,7 +36,7 @@ export async function POST(req: NextRequest) {
                     raw_text: `Subject: ${email.subject}\n\n${email.body}`,
                     source: 'gmail',
                     sender: email.sender,
-                });
+                }, user.id);
                 results.emailsIngested++;
             }
         } catch (e: any) {
@@ -44,7 +52,7 @@ export async function POST(req: NextRequest) {
                     source: 'classroom',
                     sender: 'Google Classroom',
                     scheduled_for: assignment.dueDate.toISOString(),
-                });
+                }, user.id);
                 results.assignmentsIngested++;
             }
         } catch (e: any) {

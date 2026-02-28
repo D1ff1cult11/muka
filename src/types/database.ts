@@ -34,13 +34,16 @@ export type Database = {
 export interface NotificationRow {
     id: string
     raw_text: string
+    title: string | null
     source: string
     sender: string | null
+    external_id: string | null
     zone: Zone
     confidence: number
     ai_model: string
     fallback_used: boolean
     user_zone: Zone | null
+    user_id: string
     is_dismissed: boolean
     is_snoozed: boolean
     snoozed_until: string | null
@@ -57,6 +60,7 @@ export type NotificationInsert = Omit<NotificationRow,
     ai_model?: string
     fallback_used?: boolean
     user_zone?: Zone | null
+    user_id?: string
     is_dismissed?: boolean
     is_snoozed?: boolean
     snoozed_until?: string | null
@@ -82,6 +86,7 @@ export interface TelemetrySessionRow {
     spam_blocked: number
     time_saved_seconds: number
     focus_score: number
+    user_id: string
     created_at: string
 }
 
@@ -97,6 +102,7 @@ export type TelemetrySessionInsert = Omit<TelemetrySessionRow,
     spam_blocked?: number
     time_saved_seconds?: number
     focus_score?: number
+    user_id?: string
     created_at?: string
 }
 
@@ -113,6 +119,7 @@ export interface UserCorrectionRow {
     corrected_zone: Zone
     raw_text_snapshot: string
     ai_confidence: number | null
+    user_id: string
     created_at: string
 }
 
@@ -121,6 +128,7 @@ export type UserCorrectionInsert = Omit<UserCorrectionRow,
 > & {
     id?: string
     ai_confidence?: number | null
+    user_id?: string
     created_at?: string
 }
 

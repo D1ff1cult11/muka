@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { createClient } from '@/lib/supabase/client';
+import type { NotificationRow } from '@/types/database';
 
 export type ZoneType = 'instant' | 'scheduled' | 'batch';
 
@@ -28,6 +30,10 @@ interface MukaState {
     fetchFeed: () => Promise<void>;
     dismissMessage: (messageId: string, zone: ZoneType) => void;
     snoozeMessage: (messageId: string, zone: ZoneType) => void;
+    subscribeToNotifications: (userId: string) => () => void;
+    fetchStats: () => Promise<void>;
+    updateStats: () => Promise<void>;
+    sessionStartTime: string;
 }
 
 export const useMukaStore = create<MukaState>((set, get) => ({
@@ -39,6 +45,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
     isFocusModeActive: false,
     focusTimeLeft: 0,
     focusDuration: 25 * 60, // Default 25 mins
+    sessionStartTime: new Date().toISOString(),
 
     toggleFocusMode: () => {
         const active = !get().isFocusModeActive;
@@ -87,30 +94,33 @@ export const useMukaStore = create<MukaState>((set, get) => ({
 
             if (newItems.length === 0) return;
 
-            const newInstant = [...get().instant];
-            const newScheduled = [...get().scheduled];
-            const newBatch = [...get().batch];
+            const inst: Message[] = [];
+            const sched: Message[] = [];
+            const bat: Message[] = [];
 
             newItems.forEach(item => {
                 const msg: Message = {
                     id: item.id,
                     title: item.title,
                     content: item.snippet,
-                    sender: item.source === 'gmail' ? 'Gmail' : 'Classroom',
+                    sender: item.source === 'gmail' ? 'Gmail' : (item.source === 'classroom' ? 'Classroom' : 'Muka'),
                     type: item.label.toLowerCase() as ZoneType,
                     createdAt: new Date(item.timestamp).getTime(),
                 };
 
-                if (msg.type === 'instant') newInstant.unshift(msg);
-                else if (msg.type === 'scheduled') newScheduled.unshift(msg);
-                else newBatch.unshift(msg);
+                if (msg.type === 'instant') inst.push(msg);
+                else if (msg.type === 'scheduled') sched.push(msg);
+                else bat.push(msg);
             });
 
             set({
-                instant: newInstant,
-                scheduled: newScheduled,
-                batch: newBatch,
+                instant: inst,
+                scheduled: sched,
+                batch: bat,
             });
+
+            // Trigger telemetry update since we have new counts
+            get().updateStats();
         } catch (error) {
             console.error('Failed to fetch feed:', error);
         }
@@ -122,6 +132,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
         if (index !== -1) {
             list.splice(index, 1);
             set({ [zone]: list });
+            get().updateStats();
         }
     },
 
@@ -165,9 +176,9 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             set({
                 [sourceZone]: sourceList,
                 [destinationZone]: destinationList,
-                energySaved: newEnergySaved,
-                focusScore: newFocusScore
             });
+
+            get().updateStats();
 
             // Log correction to learning layer
             fetch('/api/feedback', {
@@ -181,4 +192,83 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             }).catch(() => { });
         }
     },
+
+    subscribeToNotifications: (userId) => {
+        const supabase = createClient();
+
+        const channel = supabase
+            .channel('realtime_notifications')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `user_id=eq.${userId}`
+                },
+                (payload) => {
+                    const newItem = payload.new as NotificationRow;
+
+                    const msg: Message = {
+                        id: newItem.id,
+                        title: newItem.title ?? 'New Notification',
+                        content: newItem.raw_text,
+                        sender: newItem.source === 'gmail' ? 'Gmail' : (newItem.source === 'classroom' ? 'Classroom' : 'Muka'),
+                        type: newItem.zone,
+                        createdAt: new Date(newItem.created_at).getTime(),
+                    };
+
+                    set((state) => {
+                        // Avoid duplicates
+                        const allIds = [...state.instant, ...state.scheduled, ...state.batch].map(m => m.id);
+                        if (allIds.includes(msg.id)) return state;
+
+                        if (msg.type === 'instant') return { instant: [msg, ...state.instant] };
+                        if (msg.type === 'scheduled') return { scheduled: [msg, ...state.scheduled] };
+                        return { batch: [msg, ...state.batch] };
+                    });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    },
+
+    fetchStats: async () => {
+        try {
+            const res = await fetch('/api/telemetry');
+            const { data } = await res.json();
+            if (data?.latest) {
+                set({
+                    energySaved: data.latest.time_saved_seconds,
+                    focusScore: data.latest.focus_score
+                });
+            }
+        } catch (err) {
+            console.error('Failed to fetch stats:', err);
+        }
+    },
+
+    updateStats: async () => {
+        const { instant, scheduled, batch, sessionStartTime } = get();
+        try {
+            await fetch('/api/telemetry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_start: sessionStartTime,
+                    total_ingested: instant.length + scheduled.length + batch.length,
+                    instant_count: instant.length,
+                    scheduled_count: scheduled.length,
+                    batch_count: batch.length,
+                })
+            });
+            // Immediately refresh stats to show computed server-side values
+            get().fetchStats();
+        } catch (err) {
+            console.error('Failed to update stats:', err);
+        }
+    }
 }));

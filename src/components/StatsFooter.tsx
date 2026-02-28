@@ -13,12 +13,12 @@ export function StatsFooter() {
     ];
 
     return (
-        <footer className="mt-auto border-t border-white/5 bg-muka-black/60 backdrop-blur-2xl px-12 py-8 flex items-center justify-end gap-16 select-none relative z-50">
+        <footer className="mt-auto border-t-subpixel bg-muka-black/60 backdrop-blur-2xl px-12 py-8 flex items-center justify-end gap-16 select-none relative z-50">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
 
             {stats.map((stat, i) => (
                 <div key={i} className="flex flex-col items-start gap-1.5 group cursor-default">
-                    <span className="text-[10px] font-black tracking-[0.25em] text-zinc-500 uppercase font-mono group-hover:text-zinc-300 transition-colors">
+                    <span className="text-xs font-bold tracking-[0.25em] text-zinc-500 uppercase font-sans group-hover:text-zinc-300 transition-colors">
                         {stat.label}
                     </span>
                     <div className="flex items-baseline gap-1.5">
@@ -32,7 +32,7 @@ export function StatsFooter() {
                             {stat.value}
                         </motion.span>
                         {stat.unit && (
-                            <span className="text-[10px] font-black text-zinc-600 uppercase font-mono tracking-widest">
+                            <span className="text-xs font-black text-zinc-600 uppercase font-heading tracking-widest">
                                 {stat.unit}
                             </span>
                         )}

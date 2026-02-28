@@ -63,20 +63,20 @@ export function Dashboard() {
     };
 
     if (!mounted) {
-        return <div className="min-h-screen bg-[#0A0A0A] text-white flex items-center justify-center">Loading Data...</div>;
+        return <div className="min-h-screen bg-void text-zinc-600 flex items-center justify-center font-mono text-[10px] tracking-[0.4em] uppercase">Initializing_Neural_Shield...</div>;
     }
 
     return (
-        <div className="relative w-full h-full py-8 px-4 lg:px-8 overflow-hidden">
+        <div className="relative w-full h-full py-10 px-6 lg:px-10 overflow-hidden">
             {/* Background Auras */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-muka-purple/5 blur-[120px] rounded-full animate-pulse-slow pointer-events-none" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-muka-lime/5 blur-[120px] rounded-full animate-pulse-slow pointer-events-none" />
+            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyber-red/5 blur-[160px] rounded-full animate-pulse-slow pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-neon-green/5 blur-[160px] rounded-full animate-pulse-slow pointer-events-none" />
 
             <DragDropContext onDragEnd={onDragEnd}>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 h-full items-start relative z-10 max-w-[1600px] mx-auto">
-                    <ZoneColumn id="instant" title="Stream" messages={instant} />
-                    <ZoneColumn id="scheduled" title="Timeline" messages={scheduled} />
-                    <ZoneColumn id="batch" title="Vault" messages={batch} isLockedByDefault={true} />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16 h-full items-start relative z-10 max-w-[1800px] mx-auto">
+                    <ZoneColumn id="instant" title="STREAM" messages={instant} />
+                    <ZoneColumn id="scheduled" title="TIMELINE" messages={scheduled} />
+                    <ZoneColumn id="batch" title="VAULT" messages={batch} isLockedByDefault={true} />
                 </div>
             </DragDropContext>
         </div>

@@ -10,7 +10,6 @@ import type { Zone } from '@/types/database'
 
 const HF_API_URL = 'https://api-inference.huggingface.co/models/facebook/bart-large-mnli'
 const CONFIDENCE_THRESHOLD = 0.55  // below this, fallback safety logic triggers
-const SPAM_BLOCK_SECONDS = 30      // assumed attention cost per batch message
 
 // The three candidate labels passed to the zero-shot model
 const CANDIDATE_LABELS: Zone[] = ['instant', 'scheduled', 'batch']
@@ -68,6 +67,8 @@ export async function classifyText(text: string): Promise<ClassificationResult> 
 export async function ingestAndClassify(payload: IngestPayload): Promise<Notification> {
     const classification = await classifyText(payload.raw_text)
 
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
+
     const { data, error } = await supabaseAdmin
         .from('notifications')
         .insert({
@@ -98,6 +99,8 @@ export async function getNotificationsByZone(): Promise<{
     scheduled: Notification[]
     batch: Notification[]
 }> {
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
+
     const { data, error } = await supabaseAdmin
         .from('notifications')
         .select('*')
@@ -119,6 +122,8 @@ export async function getNotificationsByZone(): Promise<{
  * Dismisses a notification (quick micro-action).
  */
 export async function dismissNotification(id: string): Promise<void> {
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
+
     const { error } = await supabaseAdmin
         .from('notifications')
         .update({ is_dismissed: true, updated_at: new Date().toISOString() })
@@ -131,6 +136,8 @@ export async function dismissNotification(id: string): Promise<void> {
  * Snoozes a notification until the given time.
  */
 export async function snoozeNotification(id: string, until: Date): Promise<void> {
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
+
     const { error } = await supabaseAdmin
         .from('notifications')
         .update({
@@ -154,6 +161,8 @@ export async function overrideZone(
     aiConfidence: number
 ): Promise<void> {
     const now = new Date().toISOString()
+
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
 
     // Update the notification's user_zone
     const { error: updateError } = await supabaseAdmin

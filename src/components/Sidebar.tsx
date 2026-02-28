@@ -9,8 +9,7 @@ import {
     Layers,
     BarChart2,
     Settings,
-    Shield,
-    Zap
+    Shield
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 

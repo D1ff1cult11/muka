@@ -11,7 +11,7 @@ export function Dashboard() {
     // Hydration fix for DragDropContext (avoids SSR mismatch)
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
-        setMounted(true);
+        const frame = requestAnimationFrame(() => setMounted(true));
 
         // Initial fetch
         fetchFeed();

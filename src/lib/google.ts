@@ -1,4 +1,4 @@
-import { google, Auth, gmail_v1, classroom_v1 } from 'googleapis';
+import { google, Auth } from 'googleapis';
 
 /**
  * Creates and returns an authenticated Google OAuth2 client.
@@ -65,13 +65,13 @@ export async function fetchLatestEmail(auth: Auth.OAuth2Client): Promise<Extract
 
     // Extract headers
     const headers = payload?.headers || [];
-    const subject = headers.find((h) => h.name === 'Subject')?.value || 'No Subject';
-    const sender = headers.find((h) => h.name === 'From')?.value || 'Unknown Sender';
+    const subject = headers.find((h: any) => h.name === 'Subject')?.value || 'No Subject';
+    const sender = headers.find((h: any) => h.name === 'From')?.value || 'Unknown Sender';
 
     // Extract body (prefer plain text)
     let body = snippet || '';
     if (payload?.parts) {
-        const textPart = payload.parts.find((part) => part.mimeType === 'text/plain');
+        const textPart = payload.parts.find((part: any) => part.mimeType === 'text/plain');
         if (textPart?.body?.data) {
             body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
         }

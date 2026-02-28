@@ -45,6 +45,7 @@ export function computeTelemetry(payload: TelemetryPayload): ComputedTelemetry {
 export async function createTelemetrySession(payload: TelemetryPayload): Promise<TelemetrySession> {
     const computed = computeTelemetry(payload)
 
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized');
     const { data, error } = await supabaseAdmin
         .from('telemetry_sessions')
         .insert({
@@ -73,6 +74,7 @@ export async function createTelemetrySession(payload: TelemetryPayload): Promise
  * Used to populate the scoreboard on the dashboard.
  */
 export async function getLatestSession(): Promise<TelemetrySession | null> {
+    if (!supabaseAdmin) return null;
     const { data, error } = await supabaseAdmin
         .from('telemetry_sessions')
         .select('*')
@@ -95,6 +97,15 @@ export async function getAggregateTelemetry(): Promise<{
     avg_focus_score: number
     session_count: number
 }> {
+    if (!supabaseAdmin) {
+        return {
+            total_ingested: 0,
+            total_spam_blocked: 0,
+            total_time_saved_seconds: 0,
+            avg_focus_score: 100,
+            session_count: 0,
+        };
+    }
     const { data, error } = await supabaseAdmin
         .from('telemetry_sessions')
         .select('total_ingested, spam_blocked, time_saved_seconds, focus_score')
@@ -132,6 +143,7 @@ export async function getAggregateTelemetry(): Promise<{
  * Called by POST /api/corrections.
  */
 export async function logUserCorrection(payload: CorrectionPayload): Promise<UserCorrection> {
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized');
     const { data, error } = await supabaseAdmin
         .from('user_corrections')
         .insert({
@@ -155,6 +167,7 @@ export async function logUserCorrection(payload: CorrectionPayload): Promise<Use
  * Fetches all corrections — useful for analytics or future model fine-tuning.
  */
 export async function getAllCorrections(): Promise<UserCorrection[]> {
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized');
     const { data, error } = await supabaseAdmin
         .from('user_corrections')
         .select('*')

@@ -46,7 +46,14 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             });
 
             if (!res.ok) return;
-            const newItems: any[] = await res.json();
+            const newItems: Array<{
+                id: string;
+                title?: string;
+                snippet: string;
+                source: string;
+                label: string;
+                timestamp: string | number;
+            }> = await res.json();
 
             if (newItems.length === 0) return;
 

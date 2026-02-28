@@ -3,7 +3,7 @@
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { MessageCard } from './MessageCard';
 import { Message, ZoneType } from '@/store/useMukaStore';
-import { Lock, Unlock, Circle, Calendar, Layers, Activity, ChevronRight } from 'lucide-react';
+import { Lock, Unlock, Circle } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';

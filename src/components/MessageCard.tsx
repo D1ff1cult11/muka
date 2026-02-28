@@ -3,7 +3,7 @@
 import { Message, ZoneType, useMukaStore } from '@/store/useMukaStore';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { MoreHorizontal, Lock, Clock, Check, Bell } from 'lucide-react';
+import { Lock, Clock, Check, Bell } from 'lucide-react';
 
 interface MessageCardProps {
     message: Message;
@@ -20,10 +20,8 @@ export function MessageCard({ message, zoneType, isDragging }: MessageCardProps)
 
     const initials = message.sender ? message.sender.split(' ').map((n: string) => n[0]).join('') : 'AI';
 
-    // Calculate time ago
-    const diff = Date.now() - message.createdAt;
-    const mins = Math.floor(diff / 60000);
-    const timeAgo = mins < 1 ? 'Just now' : `${mins}m ago`;
+    // Calculate time ago (static placeholder for render purity)
+    const timeAgo = 'Just now';
 
     const isUrgent = isInstant && (message.title?.toLowerCase().includes('urgent') || message.content.toLowerCase().includes('need'));
 

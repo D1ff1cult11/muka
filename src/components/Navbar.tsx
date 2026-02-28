@@ -1,5 +1,4 @@
-import { Search, Bell, Settings, Command } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Search, Bell, Command } from 'lucide-react';
 
 export function Navbar() {
     return (

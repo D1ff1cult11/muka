@@ -8,15 +8,15 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
  * Browser-safe Supabase client (uses anon key).
  * Use this in Client Components.
  */
-export const supabase = supabaseUrl && supabaseAnonKey
+export const supabase = (supabaseUrl && supabaseAnonKey)
     ? createClient(supabaseUrl, supabaseAnonKey)
-    : null as any
+    : null as ReturnType<typeof createClient> | null;
 
 /**
  * Server-side Supabase client (uses service role key — bypasses RLS).
  * Use this ONLY in API routes / Server Actions. Never expose to the browser.
  */
-export const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey
+export const supabaseAdmin = (supabaseUrl && supabaseServiceRoleKey)
     ? createClient(
         supabaseUrl,
         supabaseServiceRoleKey,
@@ -27,5 +27,5 @@ export const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey
             },
         }
     )
-    : null as any
+    : null as ReturnType<typeof createClient> | null;
 

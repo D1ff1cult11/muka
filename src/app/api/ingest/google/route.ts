@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
                     raw_text: `Subject: ${email.subject}\n\n${email.body}`,
                     source: 'gmail',
                     sender: email.sender,
+                    external_id: email.id,
                 }, user.id);
                 results.emailsIngested++;
             }
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
                     raw_text: `Assignment: ${assignment.title}\nDue: ${assignment.dueDate.toLocaleString()}\n\n${assignment.description}`,
                     source: 'classroom',
                     sender: assignment.courseName,
+                    external_id: assignment.id,
                 }, user.id);
                 results.assignmentsIngested++;
             }
@@ -73,6 +75,7 @@ export async function POST(req: NextRequest) {
                     raw_text: `Announcement: ${ann.text}\n\nLink: ${ann.url}`,
                     source: 'classroom',
                     sender: ann.courseName,
+                    external_id: ann.id,
                 }, user.id);
                 results.announcementsIngested++;
             }

@@ -78,14 +78,14 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             const prefRes = await fetch('/api/preferences');
             let windows: Array<{ time: string, active: boolean }> = [];
             if (prefRes.ok) {
-                const { data } = await prefRes.json();
-                windows = data.delivery_schedule.windows || [];
+                const { data } = await prefRes.json().catch(() => ({ data: {} }));
+                windows = data?.delivery_schedule?.windows || [];
             }
 
             // 2. Load existing notifications from DB first
             const initRes = await fetch('/api/ingest');
             if (initRes.ok) {
-                const { data } = await initRes.json();
+                const { data } = await initRes.json().catch(() => ({ data: {} }));
 
                 // MUKA LOGIC: Filter scheduled items based on active windows
                 const now = new Date();
@@ -94,14 +94,14 @@ export const useMukaStore = create<MukaState>((set, get) => ({
 
                 set({
                     isWindowActive,
-                    instant: (data.instant || []).map((n: any) => ({
-                        id: n.id, title: n.sender, content: n.raw_text, sender: n.sender, type: 'instant', createdAt: new Date(n.created_at).getTime()
+                    instant: (data?.instant || []).map((n: any) => ({
+                        id: n.id, title: n.title || n.sender, content: n.raw_text, sender: n.sender, type: 'instant', createdAt: new Date(n.created_at).getTime()
                     })),
-                    scheduled: (data.scheduled || []).map((n: any) => ({
-                        id: n.id, title: n.sender, content: n.raw_text, sender: n.sender, type: 'scheduled', createdAt: new Date(n.created_at).getTime()
+                    scheduled: (data?.scheduled || []).map((n: any) => ({
+                        id: n.id, title: n.title || n.sender, content: n.raw_text, sender: n.sender, type: 'scheduled', createdAt: new Date(n.created_at).getTime()
                     })),
-                    batch: (data.batch || []).map((n: any) => ({
-                        id: n.id, title: n.sender, content: n.raw_text, sender: n.sender, type: 'batch', createdAt: new Date(n.created_at).getTime()
+                    batch: (data?.batch || []).map((n: any) => ({
+                        id: n.id, title: n.title || n.sender, content: n.raw_text, sender: n.sender, type: 'batch', createdAt: new Date(n.created_at).getTime()
                     })),
                 });
             }
@@ -122,7 +122,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                     sender?: string;
                     label: string;
                     timestamp: string | number;
-                }> = await res.json();
+                }> = await res.json().catch(() => []);
 
                 if (newItems.length > 0) {
                     const currentState = get();
@@ -140,7 +140,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                             createdAt: new Date(item.timestamp).getTime(),
                         };
 
-                        if ([...newInstant, ...newScheduled, ...newBatch].some(m => m.id === msg.id)) return;
+                        if ([...newInstant, ...newScheduled, ...newBatch].some(m => m.id === msg.id || m.content === msg.content)) return;
 
                         if (msg.type === 'instant') newInstant.unshift(msg);
                         else if (msg.type === 'scheduled') newScheduled.unshift(msg);
@@ -266,8 +266,8 @@ export const useMukaStore = create<MukaState>((set, get) => ({
 
                     set((state) => {
                         // Avoid duplicates
-                        const allIds = [...state.instant, ...state.scheduled, ...state.batch].map(m => m.id);
-                        if (allIds.includes(msg.id)) return state;
+                        const allExisting = [...state.instant, ...state.scheduled, ...state.batch];
+                        if (allExisting.some(m => m.id === msg.id || m.content === msg.content)) return state;
 
                         if (msg.type === 'instant') return { instant: [msg, ...state.instant] };
                         if (msg.type === 'scheduled') return { scheduled: [msg, ...state.scheduled] };

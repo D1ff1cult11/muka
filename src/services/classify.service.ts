@@ -102,10 +102,44 @@ export async function classifyText(text: string): Promise<ClassificationResult> 
  * Classifies a raw message and persists it to the `notifications` table.
  */
 export async function ingestAndClassify(payload: IngestPayload, userId: string): Promise<Notification> {
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
+
+    // Prevent duplicates before running AI classification
+    if (payload.external_id) {
+        const { data: existing } = await supabaseAdmin
+            .from('notifications')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('external_id', payload.external_id)
+            .limit(1)
+            .maybeSingle()
+
+        if (existing) {
+            return existing as Notification;
+        }
+    }
+
+    // Secondary check: look for exact raw_text match to catch old records that missed an external_id
+    const { data: textExisting } = await supabaseAdmin
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('source', payload.source)
+        .eq('raw_text', payload.raw_text)
+        .limit(1)
+        .maybeSingle()
+
+    if (textExisting) {
+        // Heal the old record with the new external_id so it matches strictly next time
+        if (!textExisting.external_id && payload.external_id) {
+            await supabaseAdmin.from('notifications').update({ external_id: payload.external_id }).eq('id', textExisting.id)
+            textExisting.external_id = payload.external_id
+        }
+        return textExisting as Notification;
+    }
+
     const textToClassify = payload.title ? `Title: ${payload.title}\nContent: ${payload.raw_text}` : payload.raw_text
     const classification = await classifyText(textToClassify)
-
-    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
 
     const { data, error } = await supabaseAdmin
         .from('notifications')
@@ -150,7 +184,23 @@ export async function getNotificationsByZone(userId: string): Promise<{
 
     if (error) throw new Error(`Failed to fetch notifications: ${error.message}`)
 
-    const notifications = (data ?? []) as Notification[]
+    let notifications = (data ?? []) as Notification[]
+
+    // Deduplicate on read (filters out any existing dupes in the DB)
+    const seenExternalIds = new Set();
+    const seenRawText = new Set();
+
+    notifications = notifications.filter(n => {
+        if (n.external_id && seenExternalIds.has(n.external_id)) return false;
+
+        const normalizedText = (n.raw_text || '').trim();
+        if (normalizedText && seenRawText.has(normalizedText)) return false;
+
+        if (n.external_id) seenExternalIds.add(n.external_id);
+        if (normalizedText) seenRawText.add(normalizedText);
+
+        return true;
+    });
 
     return {
         instant: notifications.filter(n => (n.user_zone ?? n.zone) === 'instant'),

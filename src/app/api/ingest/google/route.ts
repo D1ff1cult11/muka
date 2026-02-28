@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getGoogleAuth, fetchRecentEmails, fetchUpcomingAssignments } from '@/lib/google';
+import { getGoogleAuth, fetchRecentEmails, fetchUpcomingAssignments, fetchRecentAnnouncements } from '@/lib/google';
 import { ingestAndClassify } from '@/services/classify.service';
 
 export async function POST() {
@@ -25,6 +25,7 @@ export async function POST() {
         const results = {
             emailsIngested: 0,
             assignmentsIngested: 0,
+            announcementsIngested: 0,
             errors: [] as string[],
         };
 
@@ -37,6 +38,7 @@ export async function POST() {
                     raw_text: `Subject: ${email.subject}\n\n${email.body}`,
                     source: 'gmail',
                     sender: email.sender,
+                    external_id: email.id,
                 }, user.id);
                 results.emailsIngested++;
             }
@@ -47,19 +49,41 @@ export async function POST() {
 
         // 2. Fetch and ingest upcoming assignments
         try {
+            console.log('[Classroom] Fetching assignments...');
             const assignments = await fetchUpcomingAssignments(auth);
+            console.log(`[Classroom] Found ${assignments.length} assignments`);
             for (const assignment of assignments) {
                 await ingestAndClassify({
                     external_id: assignment.id,
                     raw_text: `Assignment: ${assignment.title}\nDue: ${assignment.dueDate.toLocaleString()}\n\n${assignment.description}`,
                     source: 'classroom',
-                    sender: 'Google Classroom',
+                    sender: assignment.courseName,
+                    external_id: assignment.id,
                 }, user.id);
                 results.assignmentsIngested++;
             }
         } catch (e: unknown) {
             console.error("Classroom Fetch Error", e);
             results.errors.push(`Classroom Error: ${e instanceof Error ? e.message : String(e)}`);
+        }
+
+        // 3. Fetch and ingest recent announcements
+        try {
+            console.log('[Classroom] Fetching announcements...');
+            const announcements = await fetchRecentAnnouncements(auth);
+            console.log(`[Classroom] Found ${announcements.length} announcements`);
+            for (const ann of announcements) {
+                await ingestAndClassify({
+                    raw_text: `Announcement: ${ann.text}\n\nLink: ${ann.url}`,
+                    source: 'classroom',
+                    sender: ann.courseName,
+                    external_id: ann.id,
+                }, user.id);
+                results.announcementsIngested++;
+            }
+        } catch (e: any) {
+            console.error("Classroom Announcements Fetch Error", e);
+            results.errors.push(`Classroom Announcements Error: ${e.message}`);
         }
 
         console.log("== GOOGLE SYNC RESULTS ==", results);

@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export function Dashboard() {
-    const { instant, scheduled, batch, moveMessage, fetchFeed, subscribeToNotifications, isFocusModeActive } = useMukaStore();
+    const { instant, scheduled, batch, moveMessage, fetchFeed, subscribeToNotifications, isFocusModeActive, searchQuery } = useMukaStore();
     const [userId, setUserId] = useState<string | null>(null);
 
     // Hydration fix for DragDropContext (avoids SSR mismatch)
@@ -55,6 +55,7 @@ export function Dashboard() {
         if (!destination) return;
         if (destination.droppableId === source.droppableId && destination.index === source.index) return;
         if (isFocusModeActive) return; // Prevent moves during focus
+        if (searchQuery) return; // Prevent moves while searching to avoid index mismatch
 
         moveMessage(
             draggableId,
@@ -67,6 +68,16 @@ export function Dashboard() {
     if (!mounted) {
         return <div className="min-h-screen bg-void text-zinc-600 flex items-center justify-center font-mono text-[10px] tracking-[0.4em] uppercase">Initializing_Neural_Shield...</div>;
     }
+
+    const filterMessages = (msgs: any[]) => {
+        if (!searchQuery) return msgs;
+        const lowerQuery = searchQuery.toLowerCase();
+        return msgs.filter(m =>
+            (m.title && m.title.toLowerCase().includes(lowerQuery)) ||
+            (m.content && m.content.toLowerCase().includes(lowerQuery)) ||
+            (m.sender && m.sender.toLowerCase().includes(lowerQuery))
+        );
+    };
 
     return (
         <motion.div
@@ -94,9 +105,9 @@ export function Dashboard() {
 
             <DragDropContext onDragEnd={onDragEnd}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16 h-full items-start relative z-10 max-w-[1800px] mx-auto">
-                    <ZoneColumn id="instant" title="INSTANT" messages={instant} />
-                    <ZoneColumn id="scheduled" title="SCHEDULE" messages={scheduled} />
-                    <ZoneColumn id="batch" title="BATCH" messages={batch} isLockedByDefault={true} />
+                    <ZoneColumn id="instant" title="INSTANT" messages={filterMessages(instant)} />
+                    <ZoneColumn id="scheduled" title="SCHEDULE" messages={filterMessages(scheduled)} />
+                    <ZoneColumn id="batch" title="BATCH" messages={filterMessages(batch)} isLockedByDefault={true} />
                 </div>
             </DragDropContext>
         </motion.div>

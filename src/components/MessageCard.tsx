@@ -59,6 +59,11 @@ export const MessageCard = memo(function MessageCard({ message, zoneType, isDrag
             displayTitle = firstPart[0].replace('Assignment: ', '');
             displayBody = parts.slice(1).join('\n\n');
             pType = 'classroom';
+        } else if (raw.startsWith('Announcement: ')) {
+            const parts = raw.split('\n\nLink: ');
+            displayTitle = 'New Announcement';
+            displayBody = parts[0].replace('Announcement: ', '');
+            pType = 'classroom';
         }
 
         return { displayTitle, displayBody, pType };

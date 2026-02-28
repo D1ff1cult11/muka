@@ -47,7 +47,9 @@ export async function POST(req: NextRequest) {
 
         // 2. Fetch and ingest upcoming assignments
         try {
+            console.log('[Classroom] Fetching assignments...');
             const assignments = await fetchUpcomingAssignments(auth);
+            console.log(`[Classroom] Found ${assignments.length} assignments`);
             for (const assignment of assignments) {
                 await ingestAndClassify({
                     raw_text: `Assignment: ${assignment.title}\nDue: ${assignment.dueDate.toLocaleString()}\n\n${assignment.description}`,
@@ -63,7 +65,9 @@ export async function POST(req: NextRequest) {
 
         // 3. Fetch and ingest recent announcements
         try {
+            console.log('[Classroom] Fetching announcements...');
             const announcements = await fetchRecentAnnouncements(auth);
+            console.log(`[Classroom] Found ${announcements.length} announcements`);
             for (const ann of announcements) {
                 await ingestAndClassify({
                     raw_text: `Announcement: ${ann.text}\n\nLink: ${ann.url}`,

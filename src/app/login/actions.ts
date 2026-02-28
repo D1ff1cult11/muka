@@ -73,7 +73,7 @@ export async function signInWithGoogle() {
         provider: 'google',
         options: {
             redirectTo: `${getURL()}auth/callback`,
-            scopes: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/classroom.coursework.students https://www.googleapis.com/auth/classroom.courses.readonly',
+            scopes: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/classroom.courses.readonly https://www.googleapis.com/auth/classroom.coursework.students https://www.googleapis.com/auth/classroom.announcements.readonly',
             queryParams: {
                 access_type: 'offline',
                 prompt: 'consent',

@@ -110,7 +110,7 @@ export async function fetchRecentEmails(auth: Auth.OAuth2Client): Promise<Extrac
 }
 
 /**
- * Pulls the list of courseWork from Google Classroom, filtering for items due within 7 days.
+ * Pulls the list of courseWork from Google Classroom, filtering for recent items.
  */
 export async function fetchUpcomingAssignments(auth: Auth.OAuth2Client): Promise<ExtractedAssignment[]> {
     const classroom = google.classroom({ version: 'v1', auth });
@@ -122,13 +122,16 @@ export async function fetchUpcomingAssignments(auth: Auth.OAuth2Client): Promise
 
     const courses = coursesRes.data.courses;
     if (!courses || courses.length === 0) {
+        console.log('[GClassroom] No active courses found.');
         return [];
     }
 
-    const upcomingAssignments: ExtractedAssignment[] = [];
+    console.log(`[GClassroom] Found ${courses.length} active courses: ${courses.map(c => c.name).join(', ')}`);
+
+    const allAssignments: ExtractedAssignment[] = [];
     const now = new Date();
-    const sevenDaysFromNow = new Date();
-    sevenDaysFromNow.setDate(now.getDate() + 7);
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(now.getDate() + 30);
 
     // 2. Iterate courses and fetch coursework
     for (const course of courses) {
@@ -141,31 +144,43 @@ export async function fetchUpcomingAssignments(auth: Auth.OAuth2Client): Promise
             });
 
             const courseWork = workRes.data.courseWork;
-            if (!courseWork) continue;
+            if (!courseWork) {
+                console.log(`[GClassroom] No coursework in: ${course.name}`);
+                continue;
+            }
+
+            console.log(`[GClassroom] Found ${courseWork.length} items in: ${course.name}`);
 
             for (const work of courseWork) {
+                let dueDate: Date;
+
                 if (work.dueDate && work.dueDate.year && work.dueDate.month && work.dueDate.day) {
-                    const dueDate = new Date(
+                    dueDate = new Date(
                         work.dueDate.year,
-                        work.dueDate.month - 1, // month is 1-12
+                        work.dueDate.month - 1,
                         work.dueDate.day,
                         work.dueTime?.hours || 23,
                         work.dueTime?.minutes || 59
                     );
 
-                    // Filter assignments due within the next 7 days
-                    if (dueDate > now && dueDate <= sevenDaysFromNow) {
-                        upcomingAssignments.push({
-                            id: work.id || '',
-                            courseId: course.id,
-                            courseName: course.name || 'Google Classroom',
-                            title: work.title || 'Untitled Assignment',
-                            description: work.description || '',
-                            dueDate,
-                            url: work.alternateLink || '',
-                        });
-                    }
+                    // Skip assignments that are already past due
+                    if (dueDate < now) continue;
+                    // Skip assignments too far in the future
+                    if (dueDate > thirtyDaysFromNow) continue;
+                } else {
+                    // No due date — treat as a general assignment, use creation time
+                    dueDate = new Date(work.creationTime || Date.now());
                 }
+
+                allAssignments.push({
+                    id: work.id || '',
+                    courseId: course.id,
+                    courseName: course.name || 'Google Classroom',
+                    title: work.title || 'Untitled Assignment',
+                    description: work.description || '',
+                    dueDate,
+                    url: work.alternateLink || '',
+                });
             }
         } catch (error: any) {
             // Some courses might have coursework disabled for the user (400 invalid_request)
@@ -176,7 +191,7 @@ export async function fetchUpcomingAssignments(auth: Auth.OAuth2Client): Promise
     }
 
     // Sort by soonest due date
-    return upcomingAssignments.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+    return allAssignments.sort((a: ExtractedAssignment, b: ExtractedAssignment) => a.dueDate.getTime() - b.dueDate.getTime());
 }
 
 /**

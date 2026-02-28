@@ -1,9 +1,7 @@
-export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getGoogleAuth, fetchLatestEmail, fetchUpcomingAssignments } from '@/lib/google';
 import { ingestAndClassify } from '@/services/classify.service';
-import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
     try {
@@ -15,19 +13,13 @@ export async function POST(req: NextRequest) {
         }
 
         const accessToken = session.provider_token;
-        const refreshToken = session.provider_refresh_token ?? undefined; // handle null type mismatch
+        const refreshToken = session.provider_refresh_token ?? undefined;
 
         if (!accessToken) {
             return NextResponse.json({ error: 'Google Access Token not found in session. Please sign in with Google.' }, { status: 400 });
         }
 
-        const supabase = await createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
+        const user = session.user;
         const auth = getGoogleAuth(accessToken, refreshToken);
 
         const results = {

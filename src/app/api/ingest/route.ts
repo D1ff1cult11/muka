@@ -26,8 +26,9 @@ export async function POST(req: Request) {
             data: notification
         });
 
-    } catch (error: any) {
-        console.error('[INGEST_ERROR]:', error.message);
-        return NextResponse.json({ error: error.message || 'Ingestion failed' }, { status: 500 });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Ingestion failed';
+        console.error('[INGEST_ERROR]:', message);
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

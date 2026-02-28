@@ -6,12 +6,12 @@ import { ZoneColumn } from './ZoneColumn';
 import { useEffect, useState } from 'react';
 
 export function Dashboard() {
-    const { instant, scheduled, batch, moveMessage, fetchFeed } = useMukaStore();
+    const { instant, scheduled, batch, moveMessage, fetchFeed, isFocusModeActive } = useMukaStore();
 
     // Hydration fix for DragDropContext (avoids SSR mismatch)
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
-        const frame = requestAnimationFrame(() => setMounted(true));
+        requestAnimationFrame(() => setMounted(true));
 
         // Initial fetch
         fetchFeed();
@@ -29,6 +29,7 @@ export function Dashboard() {
 
         if (!destination) return;
         if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+        if (isFocusModeActive) return; // Prevent moves during focus
 
         moveMessage(
             draggableId,
@@ -46,7 +47,7 @@ export function Dashboard() {
         <div className="w-full h-full py-6">
             <DragDropContext onDragEnd={onDragEnd}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full items-start">
-                    <ZoneColumn id="instant" title="Instant" messages={instant} />
+                    <ZoneColumn id="instant" title="Instant" messages={instant} isLockedByDefault={isFocusModeActive} />
                     <ZoneColumn id="scheduled" title="Scheduled" messages={scheduled} />
                     <ZoneColumn id="batch" title="Batch" messages={batch} isLockedByDefault={true} />
                 </div>

@@ -71,8 +71,8 @@ async function fetchClassroom(accessToken: string) {
  * Uses Zero-Shot classification to label notifications.
  */
 async function classifyMessage(title: string, snippet: string) {
-    const API_KEY = process.env.HUGGING_FACE_API_KEY;
-    if (!API_KEY) return 'Batch'; // Fallback if no key
+    const API_KEY = process.env.HUGGINGFACE_API_KEY;
+    if (!API_KEY) return 'batch'; // Fallback if no key
 
     const content = `Title: ${title}\nContent: ${snippet}`;
 
@@ -90,7 +90,7 @@ async function classifyMessage(title: string, snippet: string) {
         );
 
         const result = await response.json();
-        return result.labels?.[0] || 'Batch';
+        return result.labels?.[0]?.toLowerCase() || 'batch';
     } catch (error) {
         console.error('AI Classification error:', error);
         return 'Batch';
@@ -101,52 +101,55 @@ async function classifyMessage(title: string, snippet: string) {
  * API Route Handler
  * Technical Requirement 1: POST request
  */
+import { ingestAndClassify, getNotificationsByZone } from '@/services/classify.service';
+
 export async function POST(req: Request) {
     try {
         const { cachedIds } = await req.json();
 
-        // Technical Requirement 2: Authentication
-        // Adapting for Supabase as per project architecture
         const supabase = await createClient();
         const { data: { session }, error: authError } = await supabase.auth.getSession();
-
-        // In Supabase, the provider_token (Google Access Token) is available if enabled in the dashboard
-        // Note: This requires the 'google' provider to be linked and configured to store tokens.
+        const user = session?.user;
         const accessToken = session?.provider_token;
 
-        if (!accessToken || authError) {
-            return NextResponse.json({ error: 'Unauthorized: Missing Google Access Token' }, { status: 401 });
+        if (!accessToken || !user || authError) {
+            return NextResponse.json({ error: 'Unauthorized: Missing Google Access Token or Session' }, { status: 401 });
         }
 
-        // Technical Requirement 3: Parallel Fetching
         const [gmailData, classroomData] = await Promise.all([
             fetchGmail(accessToken, cachedIds),
             fetchClassroom(accessToken),
         ]);
 
-        // Technical Requirement 4: Data Standardization
         const unifiedData = [...gmailData, ...classroomData];
-
-        // Technical Requirement 5: Intelligent Caching Logic
         const newItems = unifiedData.filter(item => !cachedIds.includes(item.id));
 
         if (newItems.length === 0) {
             return NextResponse.json([]);
         }
 
-        // Technical Requirement 6: AI Classification in Parallel
-        const classifiedItems = await Promise.all(
+        // Persist and classify in the background (or parallel)
+        const savedItems = await Promise.all(
             newItems.map(async (item) => {
-                const label = await classifyMessage(item.title, item.snippet);
-                return { ...item, label };
+                const doc = await ingestAndClassify({
+                    raw_text: `[${item.source.toUpperCase()}] ${item.title}\n\n${item.snippet}`,
+                    source: item.source === 'gmail' ? 'gmail' : 'classroom',
+                    sender: item.source.toUpperCase(),
+                }, user.id);
+                return {
+                    id: doc.id,
+                    title: item.title,
+                    snippet: item.snippet,
+                    source: item.source,
+                    label: doc.zone,
+                    timestamp: doc.created_at,
+                };
             })
         );
 
-        // Technical Requirement 7: Response
-        return NextResponse.json(classifiedItems);
+        return NextResponse.json(savedItems);
 
     } catch (error: any) {
-        // Technical Requirement 8: Error Handling
         console.error('Processing Gateway Error:', error);
         return NextResponse.json({ error: 'Internal Server Error', message: error.message }, { status: 500 });
     }

@@ -23,36 +23,51 @@ const CANDIDATE_LABELS: Zone[] = ['instant', 'scheduled', 'batch']
  * the zone, confidence score, and whether a fallback was used.
  */
 export async function classifyText(text: string): Promise<ClassificationResult> {
-    const response = await fetch(HF_API_URL, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            inputs: text,
-            parameters: { candidate_labels: CANDIDATE_LABELS },
-        }),
-    })
+    try {
+        const response = await fetch(HF_API_URL, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                inputs: text,
+                parameters: { candidate_labels: CANDIDATE_LABELS },
+            }),
+        })
 
-    if (!response.ok) {
-        throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`)
-    }
+        if (!response.ok) {
+            console.warn(`Hugging Face API returned error: ${response.status}. Using default fallback (Instant).`)
+            return {
+                zone: 'instant',
+                confidence: 0,
+                ai_model: 'fallback-static',
+                fallback_used: true,
+            }
+        }
 
-    const data = await response.json()
+        const data = await response.json()
 
-    // HF returns arrays of labels sorted by score (highest first)
-    const topLabel: Zone = data.labels[0] as Zone
-    const topScore: number = data.scores[0] as number
+        // HF returns arrays of labels sorted by score (highest first)
+        const topLabel: Zone = data.labels[0] as Zone
+        const topScore: number = data.scores[0] as number
 
-    const fallback_used = topScore < CONFIDENCE_THRESHOLD
+        const fallback_used = topScore < CONFIDENCE_THRESHOLD
 
-    return {
-        // Safety fallback: if AI is unsure, default to 'instant' so nothing important is hidden
-        zone: fallback_used ? 'instant' : topLabel,
-        confidence: topScore,
-        ai_model: 'facebook/bart-large-mnli',
-        fallback_used,
+        return {
+            zone: fallback_used ? 'instant' : topLabel,
+            confidence: topScore,
+            ai_model: 'facebook/bart-large-mnli',
+            fallback_used,
+        }
+    } catch (e) {
+        console.error('AI Classification critical failure. defaulting to Instant.', e)
+        return {
+            zone: 'instant',
+            confidence: 0,
+            ai_model: 'error-fallback',
+            fallback_used: true,
+        }
     }
 }
 
@@ -62,9 +77,8 @@ export async function classifyText(text: string): Promise<ClassificationResult> 
 
 /**
  * Classifies a raw message and persists it to the `notifications` table.
- * This is the main function called by POST /api/ingest.
  */
-export async function ingestAndClassify(payload: IngestPayload): Promise<Notification> {
+export async function ingestAndClassify(payload: IngestPayload, userId: string): Promise<Notification> {
     const classification = await classifyText(payload.raw_text)
 
     if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
@@ -72,6 +86,7 @@ export async function ingestAndClassify(payload: IngestPayload): Promise<Notific
     const { data, error } = await supabaseAdmin
         .from('notifications')
         .insert({
+            user_id: userId,
             raw_text: payload.raw_text,
             source: payload.source,
             sender: payload.sender ?? null,
@@ -91,10 +106,9 @@ export async function ingestAndClassify(payload: IngestPayload): Promise<Notific
 }
 
 /**
- * Fetches all non-dismissed notifications, grouped by zone.
- * Used by the dashboard to populate the three-zone view.
+ * Fetches all non-dismissed notifications for a specific user.
  */
-export async function getNotificationsByZone(): Promise<{
+export async function getNotificationsByZone(userId: string): Promise<{
     instant: Notification[]
     scheduled: Notification[]
     batch: Notification[]
@@ -104,6 +118,7 @@ export async function getNotificationsByZone(): Promise<{
     const { data, error } = await supabaseAdmin
         .from('notifications')
         .select('*')
+        .eq('user_id', userId)
         .eq('is_dismissed', false)
         .order('created_at', { ascending: false })
 
@@ -116,6 +131,26 @@ export async function getNotificationsByZone(): Promise<{
         scheduled: notifications.filter(n => (n.user_zone ?? n.zone) === 'scheduled'),
         batch: notifications.filter(n => (n.user_zone ?? n.zone) === 'batch'),
     }
+}
+
+
+/**
+ * Fetches all handled notifications (dismissed or snoozed) for a user.
+ * Powering the 'Outbox' / Archive view.
+ */
+export async function getHandledNotifications(userId: string): Promise<Notification[]> {
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
+
+    const { data, error } = await supabaseAdmin
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .or('is_dismissed.eq.true,is_snoozed.eq.true')
+        .order('updated_at', { ascending: false })
+        .limit(50)
+
+    if (error) throw new Error(`Failed to fetch outbox: ${error.message}`)
+    return (data ?? []) as Notification[]
 }
 
 /**
@@ -184,4 +219,37 @@ export async function overrideZone(
         })
 
     if (correctionError) throw new Error(`Failed to log correction: ${correctionError.message}`)
+}
+
+/**
+ * Restores a handled notification back to active status.
+ */
+export async function restoreNotification(id: string): Promise<void> {
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
+
+    const { error } = await supabaseAdmin
+        .from('notifications')
+        .update({
+            is_dismissed: false,
+            is_snoozed: false,
+            snoozed_until: null,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+
+    if (error) throw new Error(`Failed to restore notification: ${error.message}`)
+}
+
+/**
+ * Hard deletes a notification from the database.
+ */
+export async function deleteNotification(id: string): Promise<void> {
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
+
+    const { error } = await supabaseAdmin
+        .from('notifications')
+        .delete()
+        .eq('id', id)
+
+    if (error) throw new Error(`Failed to delete notification: ${error.message}`)
 }

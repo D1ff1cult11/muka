@@ -2,9 +2,9 @@
 
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { MessageCard } from './MessageCard';
-import { Message, ZoneType } from '@/store/useMukaStore';
-import { Lock, Unlock, Circle } from 'lucide-react';
-import { useState } from 'react';
+import { useMukaStore, Message, ZoneType } from '@/store/useMukaStore';
+import { Lock, Unlock, Circle, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -15,38 +15,53 @@ interface ZoneColumnProps {
     isLockedByDefault?: boolean;
 }
 
-const zoneConfig: Record<ZoneType, {
-    icon: React.ReactNode,
-    color: string,
-    status: string,
-    accent: string,
-    glow: string
-}> = {
-    instant: {
-        icon: <Circle className="w-2.5 h-2.5 fill-current" />,
-        color: 'text-[#8B5CF6]',
-        status: 'active',
-        accent: 'bg-[#8B5CF6]',
-        glow: 'shadow-[0_0_15px_rgba(139,92,246,0.3)]'
-    },
-    scheduled: {
-        icon: <Circle className="w-2.5 h-2.5 fill-current" />,
-        color: 'text-[#FBBF24]',
-        status: 'queued',
-        accent: 'bg-[#FBBF24]',
-        glow: 'shadow-[0_0_15px_rgba(251,191,36,0.3)]'
-    },
-    batch: {
-        icon: <Circle className="w-2.5 h-2.5 fill-current" />,
-        color: 'text-[#BEF264]',
-        status: 'bundles',
-        accent: 'bg-[#BEF264]',
-        glow: 'shadow-[0_0_15px_rgba(190,242,100,0.3)]'
-    }
-};
-
 export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: ZoneColumnProps) {
-    const [isUnlocked, setIsUnlocked] = useState(!isLockedByDefault);
+    const { isWindowActive } = useMukaStore();
+    const isScheduledRelease = id === 'scheduled' && isWindowActive;
+
+    // Auto-unlock scheduled if window is active
+    const [isUnlocked, setIsUnlocked] = useState(!isLockedByDefault || isScheduledRelease);
+
+    useEffect(() => {
+        if (isScheduledRelease) {
+            setIsUnlocked(true);
+        } else if (isLockedByDefault) {
+            // Keep current local state for batch override, but auto-lock scheduled if window closes?
+            // For now, let's just make sure it stays reactive
+            if (id === 'scheduled') setIsUnlocked(false);
+        }
+    }, [isScheduledRelease, isLockedByDefault, id]);
+
+    const zoneConfig: Record<ZoneType, {
+        icon: React.ReactNode,
+        color: string,
+        status: string,
+        accent: string,
+        glow: string
+    }> = {
+        instant: {
+            icon: <Circle className="w-2.5 h-2.5 fill-current" />,
+            color: 'text-[#8B5CF6]',
+            status: 'active',
+            accent: 'bg-[#8B5CF6]',
+            glow: 'shadow-[0_0_15px_rgba(139,92,246,0.3)]'
+        },
+        scheduled: {
+            icon: isScheduledRelease ? <Zap className="w-2.5 h-2.5 animate-pulse" /> : <Circle className="w-2.5 h-2.5 fill-current" />,
+            color: isScheduledRelease ? 'text-[#8B5CF6]' : 'text-[#FBBF24]',
+            status: isScheduledRelease ? 'releasing' : 'queued',
+            accent: isScheduledRelease ? 'bg-[#8B5CF6]' : 'bg-[#FBBF24]',
+            glow: isScheduledRelease ? 'shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+        },
+        batch: {
+            icon: <Circle className="w-2.5 h-2.5 fill-current" />,
+            color: 'text-[#BEF264]',
+            status: 'batched',
+            accent: 'bg-[#BEF264]',
+            glow: 'shadow-[0_0_15px_rgba(190,242,100,0.3)]'
+        }
+    };
+
     const config = zoneConfig[id];
 
     return (
@@ -65,7 +80,7 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
                     </span>
                 </div>
 
-                {isLockedByDefault && (
+                {(isLockedByDefault || (id === 'scheduled' && !isScheduledRelease)) && (
                     <button
                         onClick={() => setIsUnlocked(!isUnlocked)}
                         className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-[#111] transition-all"

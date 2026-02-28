@@ -5,11 +5,19 @@
 
 
 -- ─────────────────────────────────────────────────────────────
--- 1. notifications
+-- 0. Clean Slate (Use for Dev/Reset)
+drop table if exists public.user_corrections cascade;
+drop table if exists public.notifications cascade;
+
+-- ─────────────────────────────────────────────────────────────
+-- 1. Notifications Table
 -- ─────────────────────────────────────────────────────────────
 
 create table if not exists public.notifications (
   id            uuid          primary key default gen_random_uuid(),
+
+  -- Ownership
+  user_id       uuid          not null references auth.users (id) on delete cascade,
 
   -- Content
   raw_text      text          not null,
@@ -58,30 +66,7 @@ create or replace trigger trg_notifications_updated_at
 
 
 -- ─────────────────────────────────────────────────────────────
--- 2. telemetry_sessions
--- ─────────────────────────────────────────────────────────────
-
-create table if not exists public.telemetry_sessions (
-  id                   uuid        primary key default gen_random_uuid(),
-
-  session_start        timestamptz not null default now(),
-  session_end          timestamptz,
-
-  total_ingested       int         not null default 0,
-  instant_count        int         not null default 0,
-  scheduled_count      int         not null default 0,
-  batch_count          int         not null default 0,
-
-  spam_blocked         int         not null default 0,
-  time_saved_seconds   int         not null default 0,
-  focus_score          float4      not null default 100,
-
-  created_at           timestamptz not null default now()
-);
-
-
--- ─────────────────────────────────────────────────────────────
--- 3. user_corrections
+-- 2. user_corrections
 -- ─────────────────────────────────────────────────────────────
 
 create table if not exists public.user_corrections (
@@ -108,21 +93,48 @@ create index if not exists idx_corrections_zones
 
 
 -- ─────────────────────────────────────────────────────────────
--- 4. Row Level Security (RLS)
+-- 4. User Preferences
+-- ─────────────────────────────────────────────────────────────
+
+create table if not exists public.user_preferences (
+  user_id            uuid        primary key references auth.users (id) on delete cascade,
+  
+  -- Delivery Schedule (JSONB for flexibility)
+  -- Structure: { windows: [{ id, time, label, active }] }
+  delivery_schedule  jsonb       not null default '{"windows": [{"id": "1", "time": "09:00", "label": "Morning Sync", "active": true}, {"id": "2", "time": "13:00", "label": "Lunch Digest", "active": true}, {"id": "3", "time": "18:00", "label": "Evening Review", "active": true}]}',
+  
+  -- Global Settings
+  batch_lock_enabled boolean     not null default false,
+  theme              text        not null default 'dark',
+  
+  updated_at         timestamptz not null default now()
+);
+
+-- Trigger for updated_at
+create trigger trg_user_preferences_updated_at
+  before update on public.user_preferences
+  for each row execute function public.set_updated_at();
+
+-- ─────────────────────────────────────────────────────────────
+-- 5. Row Level Security (RLS)
 -- ─────────────────────────────────────────────────────────────
 
 alter table public.notifications      enable row level security;
-alter table public.telemetry_sessions enable row level security;
 alter table public.user_corrections   enable row level security;
+alter table public.user_preferences   enable row level security;
 
--- ⚠ Open policies for v1.0 (no auth yet).
--- Replace with auth.uid() checks in Phase 2.
+-- Policies
+create policy "Users can only see their own notifications"
+  on public.notifications for all using (auth.uid() = user_id);
 
-create policy "allow all (dev)"
-  on public.notifications for all using (true);
+create policy "Users can only see their own corrections"
+  on public.user_corrections for all using (
+    exists (
+      select 1 from public.notifications
+      where public.notifications.id = notification_id
+      and public.notifications.user_id = auth.uid()
+    )
+  );
 
-create policy "allow all (dev)"
-  on public.telemetry_sessions for all using (true);
-
-create policy "allow all (dev)"
-  on public.user_corrections for all using (true);
+create policy "Users can only see their own preferences"
+  on public.user_preferences for all using (auth.uid() = user_id);

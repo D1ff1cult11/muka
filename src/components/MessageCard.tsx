@@ -64,7 +64,7 @@ export function MessageCard({ message, zoneType, isDragging }: MessageCardProps)
                         className="flex items-center gap-2 px-5 py-2.5 bg-[#BEF264] hover:bg-[#D9FA9E] text-black rounded-xl text-[10px] font-bold transition-all shadow-[0_0_20px_rgba(190,242,100,0.2)] active:scale-95"
                     >
                         <Lock className="w-3 h-3" />
-                        ACKNOWLEDGE BUNDLE
+                        ACKNOWLEDGE BATCH
                     </button>
                 </div>
             </motion.div>

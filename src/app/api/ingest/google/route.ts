@@ -1,10 +1,18 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server';
 import { getGoogleAuth, fetchLatestEmail, fetchUpcomingAssignments } from '@/lib/google';
+import { createClient } from '@/lib/supabase/server';
 import { ingestAndClassify } from '@/services/classify.service';
 
 export async function POST(req: NextRequest) {
     try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await req.json();
         const { accessToken, refreshToken } = body;
 
@@ -28,7 +36,7 @@ export async function POST(req: NextRequest) {
                     raw_text: `Subject: ${email.subject}\n\n${email.body}`,
                     source: 'gmail',
                     sender: email.sender,
-                });
+                }, user.id);
                 results.emailsIngested++;
             }
         } catch (e: any) {
@@ -43,7 +51,7 @@ export async function POST(req: NextRequest) {
                     raw_text: `Assignment: ${assignment.title}\nDue: ${assignment.dueDate.toLocaleString()}\n\n${assignment.description}`,
                     source: 'classroom',
                     sender: 'Google Classroom',
-                });
+                }, user.id);
                 results.assignmentsIngested++;
             }
         } catch (e: any) {

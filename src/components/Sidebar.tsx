@@ -12,17 +12,18 @@ import {
     Shield
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
 
 export function Sidebar() {
     const { isFocusModeActive, toggleFocusMode } = useMukaStore()
+    const pathname = usePathname()
 
     const navItems = [
-        { icon: Home, label: 'Dashboard', active: true },
-        { icon: Send, label: 'Outbox', active: false },
-        { icon: Calendar, label: 'Schedule', active: false },
-        { icon: Layers, label: 'Bundles', active: false },
-        { icon: BarChart2, label: 'Analytics', active: false },
-        { icon: Settings, label: 'Settings', active: false },
+        { icon: Home, label: 'Dashboard', href: '/dashboard' },
+        { icon: Send, label: 'Outbox', href: '/outbox' },
+        { icon: Calendar, label: 'Schedule', href: '/schedule' },
+        { icon: Settings, label: 'Settings', href: '#' },
     ]
 
     return (
@@ -36,29 +37,33 @@ export function Sidebar() {
 
             {/* Nav Items */}
             <nav className="flex flex-col gap-6 items-center flex-1">
-                {navItems.map((item, i) => (
-                    <div
-                        key={i}
-                        className={cn(
-                            "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 cursor-pointer",
-                            item.active ? "bg-[#111111] text-white shadow-inner" : "text-zinc-600 hover:text-zinc-300 hover:bg-[#0A0A0A]"
-                        )}
-                        title={item.label}
-                    >
-                        {item.active && (
-                            <motion.div
-                                layoutId="activeNav"
-                                className="absolute -left-4 w-1 h-6 bg-[#8B5CF6] rounded-r-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"
-                            />
-                        )}
-                        <item.icon className={cn("w-5 h-5", item.active && "drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]")} />
+                {navItems.map((item, i) => {
+                    const isActive = pathname === item.href;
+                    return (
+                        <Link
+                            key={i}
+                            href={item.href}
+                            className={cn(
+                                "group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 cursor-pointer",
+                                isActive ? "bg-[#111111] text-white shadow-inner" : "text-zinc-600 hover:text-zinc-300 hover:bg-[#0A0A0A]"
+                            )}
+                            title={item.label}
+                        >
+                            {isActive && (
+                                <motion.div
+                                    layoutId="activeNav"
+                                    className="absolute -left-4 w-1 h-6 bg-[#8B5CF6] rounded-r-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                                />
+                            )}
+                            <item.icon className={cn("w-5 h-5", isActive && "drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]")} />
 
-                        {/* Tooltip hint */}
-                        <div className="absolute left-16 px-2 py-1 bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-300 rounded opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap font-mono z-50">
-                            {item.label}
-                        </div>
-                    </div>
-                ))}
+                            {/* Tooltip hint */}
+                            <div className="absolute left-16 px-2 py-1 bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-300 rounded opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap font-mono z-50">
+                                {item.label}
+                            </div>
+                        </Link>
+                    )
+                })}
             </nav>
 
             {/* Shield / Focus Mode Toggle */}

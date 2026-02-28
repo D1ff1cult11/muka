@@ -3,43 +3,50 @@
 import Link from "next/link";
 import { ArrowRight, Shield, Zap, Inbox, Target, Layers, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-muka-black text-zinc-100 font-sans selection:bg-muka-purple/30 overflow-x-hidden relative">
+    <div className="min-h-screen bg-void text-zinc-100 font-sans selection:bg-cyber-red/30 overflow-x-hidden relative">
 
       {/* --- Premium Aura Background --- */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-muka-purple/10 blur-[120px] animate-pulse-slow" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-muka-lime/5 blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-[30%] right-[10%] w-[30vw] h-[30vw] rounded-full bg-muka-amber/5 blur-[100px] animate-pulse-slow" style={{ animationDelay: '4s' }} />
+        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-cyber-red/15 blur-[140px] animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-neon-green/10 blur-[140px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[30%] right-[-5%] w-[40vw] h-[40vw] rounded-full bg-neon-green/10 blur-[120px] animate-pulse-slow" style={{ animationDelay: '4s' }} />
+        <div className="absolute inset-0 bg-void/40" />
       </div>
 
-      {/* --- Global Grid Overlay --- */}
-      <div className="fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
+      {/* --- Global Grid Overlay with Fade --- */}
+      <div className="fixed inset-0 pointer-events-none z-[1]">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-20" />
+      </div>
 
       {/* --- Navbar --- */}
-      <nav className="relative z-50 w-full pt-8 px-6 md:px-12 flex items-center justify-between max-w-7xl mx-auto">
-        <div className="flex items-center gap-3 group cursor-pointer">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-muka-purple to-[#6D28D9] flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110">
-            <span className="text-white font-black text-xl tracking-tighter">M</span>
+      <nav className="relative z-50 w-full pt-10 px-6 md:px-12 flex items-center justify-between max-w-7xl mx-auto">
+        <div className="flex items-center gap-4 group cursor-pointer">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyber-red via-cyber-red to-[#C2185B] flex items-center justify-center shadow-[0_0_30px_rgba(255,51,102,0.4)] transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
+            <span className="text-white font-black text-2xl tracking-tighter">M</span>
           </div>
-          <span className="text-xl font-black tracking-tighter text-white uppercase font-mono">muka</span>
+          <div className="flex flex-col">
+            <span className="text-2xl font-black tracking-tighter text-white uppercase leading-none">muka</span>
+            <span className="text-[10px] font-bold tracking-[0.4em] text-cyber-red uppercase mt-0.5">Attention Firewall</span>
+          </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-10 text-[10px] font-black tracking-[0.3em] uppercase text-zinc-500 font-mono">
-          <Link href="#features" className="hover:text-white transition-colors">Platform</Link>
-          <Link href="#how-it-works" className="hover:text-white transition-colors">Process</Link>
-          <Link href="#benefits" className="hover:text-white transition-colors">The Shield</Link>
+        <div className="hidden md:flex items-center gap-10 text-xs font-bold tracking-[0.3em] uppercase text-zinc-500 font-heading">
+          <Link href="#features" className="hover:text-white transition-all hover:tracking-[0.4em] duration-300">Platform</Link>
+          <Link href="#how-it-works" className="hover:text-white transition-all hover:tracking-[0.4em] duration-300">Process</Link>
+          <Link href="#benefits" className="hover:text-white transition-all hover:tracking-[0.4em] duration-300">The Shield</Link>
         </div>
 
-        <div className="flex items-center gap-6">
-          <Link href="/login" className="text-xs font-black text-zinc-400 hover:text-white transition-colors uppercase tracking-widest font-mono">
+        <div className="flex items-center gap-8">
+          <Link href="/login" className="text-xs font-bold text-zinc-400 hover:text-white transition-colors uppercase tracking-widest font-heading">
             Auth
           </Link>
           <Link
             href="/signup"
-            className="px-6 py-3 rounded-xl bg-white text-black text-[10px] font-black tracking-[0.2em] uppercase hover:bg-zinc-200 transition-all shadow-[0_0_30px_rgba(255,255,255,0.15)] active:scale-95"
+            className="px-8 py-3.5 rounded-xl bg-white text-black text-xs font-bold tracking-[0.2em] uppercase hover:bg-zinc-200 transition-all shadow-[0_10px_40px_rgba(255,255,255,0.2)] active:scale-95 border border-white font-heading"
           >
             Deploy Shield
           </Link>
@@ -49,169 +56,287 @@ export default function Home() {
       <main className="relative z-10 w-full flex flex-col items-center">
 
         {/* --- Hero Section --- */}
-        <section className="relative w-full max-w-7xl mx-auto px-6 pt-32 pb-48 lg:pt-48 flex flex-col min-h-[90vh] justify-center">
+        <section className="relative w-full max-w-7xl mx-auto px-6 pt-32 pb-48 lg:pt-40 flex flex-col min-h-screen justify-center items-center overflow-visible">
 
           <div className="relative z-20 w-full flex flex-col text-center">
+            {/* Animated Badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8 mx-auto"
+            >
+              <div className="w-2 h-2 rounded-full bg-cyber-red animate-pulse shadow-[0_0_10px_#FF3366]" />
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, ease: "linear" }}
+                className="text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase text-zinc-400"
+              >
+                System Active — V2.4 ALPHA
+              </motion.span>
+            </motion.div>
+
             {/* The giant staggered text */}
             <motion.h1
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-              className="text-[14vw] sm:text-[12vw] md:text-[10vw] lg:text-[160px] leading-[0.8] font-black tracking-tighter text-white mix-blend-plus-lighter relative uppercase font-mono italic"
+              className="text-[14vw] sm:text-[12vw] md:text-[10vw] lg:text-[150px] leading-[0.85] font-extrabold tracking-tighter text-white relative uppercase"
             >
-              <div className="bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">Protect</div>
-              <div className="text-zinc-600">Your</div>
-              <div className="bg-clip-text text-transparent bg-gradient-to-br from-muka-purple to-muka-lime">Focus</div>
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="bg-clip-text text-transparent bg-gradient-to-b from-white to-white/30 mb-2"
+              >
+                Protect
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                className="text-zinc-700/80 mb-2"
+              >
+                Your
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                className="relative inline-block"
+              >
+                <span className="bg-clip-text text-transparent bg-gradient-to-br from-cyber-red via-cyber-red to-neon-green">Focus</span>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "100%" }}
+                  transition={{ delay: 1.2, duration: 1.5 }}
+                  className="absolute -bottom-4 left-0 h-1 md:h-2 bg-gradient-to-r from-cyber-red to-neon-green rounded-full"
+                />
+              </motion.div>
             </motion.h1>
 
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5, duration: 1 }}
-              className="mt-12 max-w-xl mx-auto space-y-8"
+              className="mt-16 max-w-2xl mx-auto space-y-10"
             >
-              <p className="text-zinc-500 text-sm md:text-base leading-relaxed font-medium uppercase tracking-[0.1em]">
-                Fragmented university communication intercepted. Escalate what matters. Batch everything else.
-              </p>
+              <div className="flex flex-wrap justify-center gap-x-2">
+                {"Fragmented university communication intercepted. Escalate what matters. Batch everything else into the void.".split(" ").map((word, i) => (
+                  <motion.span
+                    key={i}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 + i * 0.05, duration: 0.5 }}
+                    className={cn(
+                      "text-sm md:text-lg leading-relaxed uppercase tracking-[0.15em]",
+                      word === "Escalate" || word === "matters." ? "text-white font-medium" : "text-zinc-500 font-light"
+                    )}
+                  >
+                    {word}
+                  </motion.span>
+                ))}
+              </div>
 
-              <div className="flex items-center justify-center gap-6">
-                <Link href="/signup" className="px-8 py-4 rounded-2xl bg-muka-purple text-white text-[11px] font-black shadow-[0_0_40px_rgba(139,92,246,0.3)] hover:shadow-[0_0_50px_rgba(139,92,246,0.5)] transition-all flex items-center gap-3 uppercase tracking-widest active:scale-95">
-                  Start Protection <ArrowRight className="w-4 h-4" />
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
+                <Link href="/signup" className="group px-10 py-5 rounded-2xl bg-cyber-red text-white text-xs font-bold shadow-[0_20px_60px_rgba(255,51,102,0.4)] hover:shadow-[0_25px_80px_rgba(255,51,102,0.6)] transition-all flex items-center gap-4 uppercase tracking-[0.2em] active:scale-95">
+                  Start Protection
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <div className="px-8 py-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-xl text-[11px] font-black text-zinc-400 uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer">
+                <div className="group px-10 py-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-2xl text-xs font-bold text-zinc-400 uppercase tracking-[0.2em] hover:bg-white/10 hover:text-white transition-all cursor-pointer flex items-center gap-3">
+                  <span className="w-2 h-2 rounded-full bg-zinc-600 group-hover:bg-neon-green transition-colors" />
                   Live Demo
                 </div>
               </div>
             </motion.div>
 
             {/* Floating stats decorative */}
-            <div className="absolute top-[10%] left-[5%] md:left-[10%] hidden lg:flex flex-col gap-1 items-start text-left">
-              <span className="text-4xl font-black tracking-tighter text-white font-mono italic">+14k</span>
-              <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-600 font-black font-mono">Hours Saved</span>
+            <div className="absolute top-[10%] left-[5%] md:left-[2%] hidden lg:flex flex-col gap-2 items-start text-left">
+              <span className="text-5xl font-extrabold tracking-tighter text-white">+14k</span>
+              <span className="text-xs uppercase tracking-[0.3em] text-zinc-600 font-bold">Neurons Saved</span>
             </div>
 
-            <div className="absolute bottom-[10%] right-[5%] md:right-[10%] hidden lg:flex flex-col gap-1 items-end text-right">
-              <span className="text-4xl font-black tracking-tighter text-muka-lime font-mono italic">AI-Locked</span>
-              <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-600 font-black font-mono">Absolute Privacy</span>
+            <div className="absolute bottom-[20%] right-[5%] md:right-[2%] hidden lg:flex flex-col gap-2 items-end text-right">
+              <span className="text-5xl font-extrabold tracking-tighter text-neon-green">AI-Locked</span>
+              <span className="text-xs uppercase tracking-[0.3em] text-zinc-600 font-bold">Absolute Sovereignty</span>
             </div>
           </div>
+
+          {/* Scroll Indicator */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 2, duration: 1 }}
+            className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4"
+          >
+            <span className="text-[10px] font-bold tracking-[0.5em] text-zinc-600 uppercase">Scroll to Access</span>
+            <div className="w-px h-16 bg-gradient-to-b from-cyber-red to-transparent" />
+          </motion.div>
         </section>
 
         {/* --- Trusted Integrations Strip --- */}
-        <section className="w-full max-w-5xl mx-auto px-6 py-20 border-y border-white/5 flex flex-wrap justify-center gap-16 md:gap-32 opacity-40 hover:opacity-100 transition-opacity duration-1000">
-          <div className="flex items-center gap-3 text-sm font-black tracking-[0.3em] uppercase font-mono"><Layers className="w-5 h-5 text-muka-purple" /> Canvas</div>
-          <div className="flex items-center gap-3 text-sm font-black tracking-[0.3em] uppercase font-mono"><Inbox className="w-5 h-5 text-muka-lime" /> Outlook</div>
-          <div className="flex items-center gap-3 text-sm font-black tracking-[0.3em] uppercase font-mono"><Zap className="w-5 h-5 text-muka-amber" /> G-Mail</div>
-          <div className="flex items-center gap-3 text-sm font-black tracking-[0.3em] uppercase font-mono"><Target className="w-5 h-5 text-muka-purple" /> WhatsApp</div>
+        <section className="w-full max-w-7xl mx-auto px-6 py-24 border-y border-white/5 flex flex-wrap justify-center gap-12 md:gap-24 opacity-40 hover:opacity-100 transition-opacity duration-700 bg-white/[0.01]">
+          {[
+            { name: "Canvas", icon: Layers, color: "text-cyber-red" },
+            { name: "Outlook", icon: Inbox, color: "text-neon-green" },
+            { name: "G-Mail", icon: Zap, color: "text-cyber-red" },
+            { name: "WhatsApp", icon: Target, color: "text-neon-green" },
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-4 text-xs font-bold tracking-[0.3em] uppercase group cursor-default">
+              <item.icon className={`w-6 h-6 ${item.color} group-hover:scale-125 transition-transform duration-500`} />
+              <span className="group-hover:text-white transition-colors">{item.name}</span>
+            </div>
+          ))}
         </section>
 
         {/* --- The Shield Zones (Features) --- */}
-        <section id="benefits" className="w-full max-w-7xl mx-auto px-6 py-40">
-          <div className="flex flex-col items-center mb-24">
-            <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-center uppercase font-mono italic italic mb-4">The Shield</h2>
-            <div className="w-20 h-1 bg-muka-purple rounded-full glow-purple" />
+        <section id="benefits" className="w-full max-w-7xl mx-auto px-6 py-48">
+          <div className="flex flex-col items-center mb-32">
+            <span className="text-cyber-red text-xs font-bold tracking-[0.6em] uppercase mb-4">Core Architecture</span>
+            <h2 className="text-5xl md:text-8xl font-extrabold tracking-tighter text-center uppercase mb-10">The Shield</h2>
+            <div className="w-32 h-1.5 bg-gradient-to-r from-cyber-red to-neon-green rounded-full shadow-[0_0_20px_#FF3366]" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
 
             {/* Card 1: Instant Zone */}
             <motion.div
-              whileHover={{ y: -10 }}
-              className="group relative glass-card p-10 rounded-[32px] border border-white/5 overflow-hidden h-[450px] flex flex-col"
+              whileHover={{ y: -15, scale: 1.02 }}
+              className="group relative bg-[#080808] p-12 rounded-[40px] border-subpixel overflow-hidden h-[500px] flex flex-col shadow-2xl transition-all duration-500"
             >
-              <div className="absolute top-0 right-0 p-10 z-20">
-                <div className="w-12 h-12 rounded-2xl bg-muka-purple/10 border border-muka-purple/20 flex items-center justify-center text-muka-purple group-hover:scale-110 transition-transform">
-                  <Zap className="w-6 h-6 fill-current" />
+              <div className="absolute top-0 right-0 p-12 z-20">
+                <div className="w-16 h-16 rounded-3xl bg-cyber-red/10 border border-cyber-red/20 flex items-center justify-center text-cyber-red group-hover:bg-cyber-red group-hover:text-white transition-all duration-500 shadow-xl">
+                  <Zap className="w-8 h-8 fill-current" />
                 </div>
               </div>
               <div className="mt-auto relative z-20">
-                <h3 className="text-2xl font-black mb-4 text-white uppercase tracking-tight font-mono">Stream</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed font-semibold uppercase tracking-wide">
-                  Emergencies and immediate deadlines bypass the shield. Your AI gatekeeper ensures you only break focus for absolute priority.
+                <h3 className="text-3xl font-extrabold mb-6 text-white uppercase tracking-tight">Stream</h3>
+                <p className="text-sm md:text-base text-zinc-500 leading-relaxed font-light uppercase tracking-[0.05em]">
+                  Emergencies and immediate deadlines bypass the shield. <span className="text-zinc-300 font-medium">Your AI gatekeeper</span> ensures you only break focus for absolute priority.
                 </p>
               </div>
-              <div className="absolute top-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full bg-muka-purple/10 blur-[80px] group-hover:bg-muka-purple/20 transition-all duration-1000" />
+              <div className="absolute top-[-20%] right-[-20%] w-[100%] h-[100%] rounded-full bg-cyber-red/10 blur-[100px] group-hover:blur-[120px] transition-all duration-1000" />
+              <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-cyber-red to-transparent opacity-30" />
             </motion.div>
 
             {/* Card 2: Timeline */}
             <motion.div
-              whileHover={{ y: -10 }}
-              className="group relative glass-card p-10 rounded-[32px] border border-white/5 overflow-hidden h-[450px] flex flex-col"
+              whileHover={{ y: -15, scale: 1.02 }}
+              className="group relative bg-[#080808] p-12 rounded-[40px] border-subpixel overflow-hidden h-[500px] flex flex-col shadow-2xl transition-all duration-500"
             >
-              <div className="absolute top-0 right-0 p-10 z-20">
-                <div className="w-12 h-12 rounded-2xl bg-muka-amber/10 border border-muka-amber/20 flex items-center justify-center text-muka-amber group-hover:scale-110 transition-transform">
-                  <Inbox className="w-6 h-6 fill-current" />
+              <div className="absolute top-0 right-0 p-12 z-20">
+                <div className="w-16 h-16 rounded-3xl bg-electric-amber/10 border border-electric-amber/20 flex items-center justify-center text-electric-amber group-hover:bg-electric-amber group-hover:text-black transition-all duration-500 shadow-xl">
+                  <Inbox className="w-8 h-8 fill-current" />
                 </div>
               </div>
               <div className="mt-auto relative z-20 text-right">
-                <h3 className="text-2xl font-black mb-4 text-white uppercase tracking-tight font-mono">Timeline</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed font-semibold uppercase tracking-wide">
-                  Non-urgent messages are queued for scheduled delivery. Protect your deep work blocks without losing track of your day.
+                <h3 className="text-3xl font-extrabold mb-6 text-white uppercase tracking-tight">Timeline</h3>
+                <p className="text-sm md:text-base text-zinc-500 leading-relaxed font-light uppercase tracking-[0.05em]">
+                  Non-urgent messages are queued for <span className="text-zinc-300 font-medium">scheduled delivery.</span> Protect your deep work blocks without losing track of your day.
                 </p>
               </div>
-              <div className="absolute top-[30%] left-[-10%] w-[100%] h-[100%] rounded-full bg-muka-amber/5 blur-[80px] group-hover:bg-muka-amber/15 transition-all duration-1000" />
-              <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-muka-amber/30 to-transparent" />
+              <div className="absolute top-[30%] left-[-10%] w-[120%] h-[120%] rounded-full bg-neon-green/5 blur-[100px] group-hover:bg-neon-green/10 transition-all duration-1000" />
+              <div className="absolute top-0 left-0 w-[1px] h-full bg-gradient-to-b from-neon-green/30 to-transparent" />
             </motion.div>
 
             {/* Card 3: Vault */}
             <motion.div
-              whileHover={{ y: -10 }}
-              className="group relative glass-card p-10 rounded-[32px] border border-white/5 overflow-hidden h-[450px] flex flex-col"
+              whileHover={{ y: -15, scale: 1.02 }}
+              className="group relative bg-[#080808] p-12 rounded-[40px] border-subpixel overflow-hidden h-[500px] flex flex-col shadow-2xl transition-all duration-500"
             >
-              <div className="absolute top-0 right-0 p-10 z-20">
-                <div className="w-12 h-12 rounded-2xl bg-muka-lime/10 border border-muka-lime/20 flex items-center justify-center text-muka-lime group-hover:scale-110 transition-transform">
-                  <Shield className="w-6 h-6 fill-current" />
+              <div className="absolute top-0 right-0 p-12 z-20">
+                <div className="w-16 h-16 rounded-3xl bg-neon-green/10 border border-neon-green/20 flex items-center justify-center text-neon-green group-hover:bg-neon-green group-hover:text-black transition-all duration-500 shadow-xl">
+                  <Shield className="w-8 h-8 fill-current" />
                 </div>
               </div>
               <div className="mt-auto relative z-20">
-                <h3 className="text-2xl font-black mb-4 text-white uppercase tracking-tight font-mono">Vault</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed font-semibold uppercase tracking-wide">
-                  Campus blasts and casual chatter locked away. Low-priority noise is suppressed until you explicitly decide to unlock the vault.
+                <h3 className="text-3xl font-extrabold mb-6 text-white uppercase tracking-tight">Vault</h3>
+                <p className="text-sm md:text-base text-zinc-500 leading-relaxed font-light uppercase tracking-[0.05em]">
+                  Campus blasts and casual chatter locked away. <span className="text-zinc-300 font-medium">Low-priority noise</span> is suppressed until you explicitly decide to unlock.
                 </p>
               </div>
-              <div className="absolute bottom-[-20%] left-[-20%] w-[80%] h-[80%] rounded-full bg-muka-lime/10 blur-[80px] group-hover:bg-muka-lime/20 transition-all duration-1000" />
+              <div className="absolute bottom-[-20%] left-[-20%] w-[100%] h-[100%] rounded-full bg-neon-green/10 blur-[100px] group-hover:blur-[120px] transition-all duration-1000" />
+              <div className="absolute top-0 right-0 w-full h-[1px] bg-gradient-to-l from-neon-green to-transparent opacity-30" />
             </motion.div>
 
           </div>
         </section>
 
         {/* --- Motivation Section --- */}
-        <section className="w-full max-w-4xl mx-auto px-6 py-40 text-center flex flex-col items-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-muka-purple/5 blur-[120px] rounded-full pointer-events-none" />
-          <QuoteIcon />
-          <h2 className="text-3xl md:text-5xl font-black leading-[0.9] text-white uppercase font-mono italic mt-12 mb-8 tracking-tighter">
+        <section className="w-full max-w-6xl mx-auto px-6 py-48 text-center flex flex-col items-center relative">
+          <div className="absolute inset-0 bg-cyber-red/5 blur-[160px] rounded-full pointer-events-none" />
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <QuoteIcon />
+          </motion.div>
+          <h2 className="text-4xl md:text-7xl font-extrabold leading-[0.9] text-white uppercase mt-16 mb-12 tracking-tighter max-w-4xl">
             Investing your focus is the highest ROI.
           </h2>
-          <p className="text-[10px] text-muka-purple tracking-[0.5em] uppercase font-black font-mono">Alchemical Shield Technology</p>
+          <p className="text-xs text-cyber-red tracking-[1em] uppercase font-bold mb-20 animate-pulse">Alchemical Focus Technology</p>
 
-          <div className="mt-20 max-w-2xl mx-auto glass-card p-10 rounded-[40px] border border-white/5">
-            <p className="text-sm md:text-base text-zinc-400 leading-relaxed font-medium uppercase tracking-wider">
-              Muka is your algorithmic firewall. Every club poster shards your concentration. We ingest, classify, and silence the chaos.
-            </p>
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+            <div className="bg-white/[0.02] border border-white/5 p-12 rounded-[48px] backdrop-blur-3xl hover:bg-white/[0.04] transition-colors">
+              <span className="text-neon-green text-xs font-bold tracking-widest uppercase mb-4 block">// Algorithm</span>
+              <p className="text-lg md:text-xl text-zinc-400 leading-relaxed font-light uppercase tracking-wider">
+                Muka is your algorithmic firewall. Every club poster shards your concentration. We <span className="text-white font-medium">ingest, classify, and silence</span> the chaos.
+              </p>
+            </div>
+            <div className="bg-white/[0.02] border border-white/5 p-12 rounded-[48px] backdrop-blur-3xl hover:bg-white/[0.04] transition-colors">
+              <span className="text-cyber-red text-xs font-bold tracking-widest uppercase mb-4 block">// Sovereignty</span>
+              <p className="text-lg md:text-xl text-zinc-400 leading-relaxed font-light uppercase tracking-wider">
+                The modern student is a product of noise. Take back control of your <span className="text-white font-medium">cognitive bandwidth</span> with agentic interception.
+              </p>
+            </div>
           </div>
         </section>
 
       </main>
 
-      {/* --- Footer --- */}
-      <footer className="relative z-10 w-full border-t border-white/5 py-20 bg-muka-black">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-white/5 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-zinc-500" />
+      <footer className="relative z-10 w-full border-t border-white/5 py-32 bg-void">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-20">
+            <div className="flex flex-col gap-8 flex-1">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center shadow-lg">
+                  <Shield className="w-6 h-6 text-zinc-500" />
+                </div>
+                <span className="text-2xl font-extrabold text-white uppercase tracking-[0.4em]">muka.</span>
+              </div>
+              <p className="text-zinc-500 max-w-sm text-sm font-light uppercase tracking-widest">
+                The shield for the modern intellectual. Intercepting the noise since 2026.
+              </p>
             </div>
-            <span className="text-sm font-black text-zinc-500 uppercase tracking-[0.4em] font-mono">muka.</span>
-          </div>
-          <div className="flex flex-col md:items-end gap-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 font-mono">
-              Advanced Agentic Research Layer
-            </p>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-700 font-mono">
-              &copy; 2026 MUKA SHIELD LABS
-            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-20">
+              <div className="flex flex-col gap-6">
+                <span className="text-xs font-black text-white uppercase tracking-[0.3em]">Control</span>
+                <div className="flex flex-col gap-4 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                  <Link href="#" className="hover:text-cyber-red transition-colors">Shield</Link>
+                  <Link href="#" className="hover:text-cyber-red transition-colors">Vault</Link>
+                  <Link href="#" className="hover:text-cyber-red transition-colors">Stream</Link>
+                </div>
+              </div>
+              <div className="flex flex-col gap-6">
+                <span className="text-xs font-black text-white uppercase tracking-[0.3em]">Company</span>
+                <div className="flex flex-col gap-4 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                  <Link href="#" className="hover:text-neon-green transition-colors">Labs</Link>
+                  <Link href="#" className="hover:text-neon-green transition-colors">Privacy</Link>
+                  <Link href="#" className="hover:text-neon-green transition-colors">Auth</Link>
+                </div>
+              </div>
+              <div className="flex flex-col gap-6 flex-grow-0 min-w-[200px]">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 leading-relaxed">
+                  Advanced Agentic Research Layer
+                </p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
+                  &copy; 2026 MUKA SHIELD LABS <br /> ALL RIGHTS RESERVED
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
+
 
     </div>
   );
@@ -219,7 +344,7 @@ export default function Home() {
 
 function QuoteIcon() {
   return (
-    <div className="w-16 h-16 rounded-full bg-muka-purple/10 flex items-center justify-center text-muka-purple animate-bounce">
+    <div className="w-16 h-16 rounded-full bg-cyber-red/10 flex items-center justify-center text-cyber-red animate-bounce">
       <Sparkles className="w-8 h-8" />
     </div>
   );

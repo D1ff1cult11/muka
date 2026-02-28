@@ -1,12 +1,15 @@
 'use client'
 
 import { motion } from 'framer-motion';
+import { useMukaStore } from '@/store/useMukaStore';
 
 export function StatsFooter() {
+    const { energySaved, focusScore, batch } = useMukaStore();
+
     const stats = [
-        { label: 'Focus Time Saved', value: '4.7', unit: 'hrs', color: 'text-[#BEF264]' },
-        { label: 'Messages Routed', value: '1,284', color: 'text-zinc-300' },
-        { label: 'Batch Queue', value: '36', color: 'text-zinc-300' },
+        { label: 'Energy Saved', value: energySaved, unit: 'kJ', color: 'text-[#BEF264]' },
+        { label: 'Focus Score', value: focusScore, unit: '%', color: 'text-white' },
+        { label: 'Batch Queue', value: batch.length, color: 'text-zinc-500' },
     ];
 
     return (
@@ -18,9 +21,9 @@ export function StatsFooter() {
                     </span>
                     <div className="flex items-baseline gap-1">
                         <motion.span
+                            key={stat.value}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.5 + i * 0.1 }}
                             className={`text-xl font-bold font-mono tracking-tight ${stat.color}`}
                         >
                             {stat.value}

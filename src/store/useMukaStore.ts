@@ -16,33 +16,91 @@ interface MukaState {
     scheduled: Message[];
     batch: Message[];
     energySaved: number;
+    focusScore: number;
     isFocusModeActive: boolean;
     toggleFocusMode: () => void;
     moveMessage: (messageId: string, sourceZone: ZoneType, destinationZone: ZoneType, destinationIndex: number) => void;
+    fetchFeed: () => Promise<void>;
+    dismissMessage: (messageId: string, zone: ZoneType) => void;
+    snoozeMessage: (messageId: string, zone: ZoneType) => void;
 }
 
-const initialInstant: Message[] = [
-    { id: 'msg-1', sender: 'Elena V.', content: 'The new protocol deployment is ready for review. Need your sign-off before EOD.', type: 'instant', createdAt: Date.now() },
-    { id: 'msg-2', sender: 'Marcus T.', content: 'Synced the telemetry data — latency dropped 34% after the last patch.', type: 'instant', createdAt: Date.now() },
-];
-
-const initialScheduled: Message[] = [
-    { id: 'msg-3', sender: 'Board meeting', content: 'Q4 Protocol Performance Review', type: 'scheduled', createdAt: Date.now() },
-    { id: 'msg-4', sender: 'Engineering', content: 'Sprint Retrospective & Demo', type: 'scheduled', createdAt: Date.now() },
-];
-
-const initialBatch: Message[] = [
-    { id: 'msg-5', title: 'Weekly Digest — All Teams', content: 'Newsletter: Top 10 JS Tricks', type: 'batch', createdAt: Date.now() },
-    { id: 'msg-6', title: 'Compliance Report Bundle', content: 'Steam Sale alert', type: 'batch', createdAt: Date.now() },
-];
-
 export const useMukaStore = create<MukaState>((set, get) => ({
-    instant: initialInstant,
-    scheduled: initialScheduled,
-    batch: initialBatch,
+    instant: [],
+    scheduled: [],
+    batch: [],
     energySaved: 0,
+    focusScore: 100,
     isFocusModeActive: true,
     toggleFocusMode: () => set((state) => ({ isFocusModeActive: !state.isFocusModeActive })),
+
+    fetchFeed: async () => {
+        const { instant, scheduled, batch } = get();
+        const cachedIds = [...instant, ...scheduled, ...batch].map(m => m.id);
+
+        try {
+            const res = await fetch('/api/feed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cachedIds }),
+            });
+
+            if (!res.ok) return;
+            const newItems: any[] = await res.json();
+
+            if (newItems.length === 0) return;
+
+            const newInstant = [...get().instant];
+            const newScheduled = [...get().scheduled];
+            const newBatch = [...get().batch];
+
+            newItems.forEach(item => {
+                const msg: Message = {
+                    id: item.id,
+                    title: item.title,
+                    content: item.snippet,
+                    sender: item.source === 'gmail' ? 'Gmail' : 'Classroom',
+                    type: item.label.toLowerCase() as ZoneType,
+                    createdAt: new Date(item.timestamp).getTime(),
+                };
+
+                if (msg.type === 'instant') newInstant.unshift(msg);
+                else if (msg.type === 'scheduled') newScheduled.unshift(msg);
+                else newBatch.unshift(msg);
+            });
+
+            set({
+                instant: newInstant,
+                scheduled: newScheduled,
+                batch: newBatch,
+            });
+        } catch (error) {
+            console.error('Failed to fetch feed:', error);
+        }
+    },
+
+    dismissMessage: (messageId, zone) => {
+        const list = [...get()[zone]];
+        const index = list.findIndex(m => m.id === messageId);
+        if (index !== -1) {
+            list.splice(index, 1);
+            set({ [zone]: list });
+        }
+    },
+
+    snoozeMessage: (messageId, zone) => {
+        const sourceList = [...get()[zone]];
+        const scheduledList = [...get().scheduled];
+
+        const index = sourceList.findIndex(m => m.id === messageId);
+        if (index !== -1) {
+            const [msg] = sourceList.splice(index, 1);
+            msg.type = 'scheduled';
+            scheduledList.unshift(msg);
+            set({ [zone]: sourceList, scheduled: scheduledList });
+        }
+    },
+
     moveMessage: async (messageId, sourceZone, destinationZone, destinationIndex) => {
         const state = get();
         const sourceList = [...state[sourceZone]];
@@ -52,8 +110,6 @@ export const useMukaStore = create<MukaState>((set, get) => ({
         if (messageIndex === -1) return;
 
         const [movedMessage] = sourceList.splice(messageIndex, 1);
-
-        // Update the message type if it moved to a different zone
         const updatedMessage = { ...movedMessage, type: destinationZone };
 
         if (sourceZone === destinationZone) {
@@ -63,32 +119,29 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             destinationList.splice(destinationIndex, 0, updatedMessage);
 
             let newEnergySaved = state.energySaved;
+            if (destinationZone === 'batch') newEnergySaved += 15;
+            else if (sourceZone === 'batch') newEnergySaved -= 15;
 
-            // Moving to batch acts as saving energy
-            if (destinationZone === 'batch') {
-                newEnergySaved += 15;
-            } else if (sourceZone === 'batch') {
-                newEnergySaved -= 15;
-            }
+            // Simple focus score heuristic
+            const newFocusScore = Math.max(0, Math.min(100, state.focusScore + (destinationZone === 'instant' ? -5 : 2)));
 
             set({
                 [sourceZone]: sourceList,
                 [destinationZone]: destinationList,
                 energySaved: newEnergySaved,
+                focusScore: newFocusScore
             });
 
-            // Fire async feedback
-            try {
-                fetch('/api/feedback', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messageId, sourceZone, destinationZone }),
-                }).catch(() => {
-                    // Silent catch for dummy endpoint
-                });
-            } catch (_e) {
-                // Ignore errors
-            }
+            // Log correction to learning layer
+            fetch('/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messageId,
+                    originalZone: sourceZone,
+                    correctedZone: destinationZone
+                }),
+            }).catch(() => { });
         }
     },
 }));

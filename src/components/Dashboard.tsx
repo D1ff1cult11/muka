@@ -6,16 +6,23 @@ import { ZoneColumn } from './ZoneColumn';
 import { useEffect, useState } from 'react';
 
 export function Dashboard() {
-    const { instant, scheduled, batch, moveMessage } = useMukaStore();
+    const { instant, scheduled, batch, moveMessage, fetchFeed } = useMukaStore();
 
     // Hydration fix for DragDropContext (avoids SSR mismatch)
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
-        const frame = requestAnimationFrame(() => {
-            setMounted(true);
-        });
-        return () => cancelAnimationFrame(frame);
-    }, []);
+        setMounted(true);
+
+        // Initial fetch
+        fetchFeed();
+
+        // 30s Polling
+        const interval = setInterval(() => {
+            fetchFeed();
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [fetchFeed]);
 
     const onDragEnd = (result: DropResult) => {
         const { destination, source, draggableId } = result;

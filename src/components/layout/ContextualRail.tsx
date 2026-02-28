@@ -1,13 +1,14 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import { usePathname } from 'next/navigation'
-import { Plus, Hash, Ghost, Zap, Bell, ShieldCheck, Filter, Archive, Search, Target, Shield, Settings } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Plus, Hash, Ghost, Zap, Bell, ShieldCheck, Archive, Search, Target, Shield, Settings, CheckCircle2 } from 'lucide-react'
+import { useMukaStore } from '@/store/useMukaStore'
+
+import React from 'react';
 
 const CONTEXT_MAP: Record<string, {
     title: string,
-    sections: { label: string, items: { icon: any, label: string, badge?: string }[] }[]
+    sections: { label: string, items: { icon: React.ElementType, label: string, badge?: string }[] }[]
 }> = {
     '/home': {
         title: '',
@@ -106,7 +107,38 @@ const CONTEXT_MAP: Record<string, {
 
 export function ContextualRail() {
     const pathname = usePathname()
-    const config = CONTEXT_MAP[pathname] || CONTEXT_MAP['/home']
+    const { historyInstant, historyScheduled, historyBatch } = useMukaStore()
+
+    // Dynamically build the configuration for /home to inject history
+    const baseConfig = CONTEXT_MAP[pathname] || CONTEXT_MAP['/home'];
+
+    let config = baseConfig;
+    if (pathname === '/home') {
+        config = {
+            ...baseConfig,
+            sections: [
+                baseConfig.sections[0], // Keep FILTERS
+                {
+                    label: 'INSTANT_HISTORY',
+                    items: historyInstant.length > 0
+                        ? historyInstant.map(m => ({ icon: CheckCircle2, label: m.title || m.content.substring(0, 20) + '...', badge: '' }))
+                        : [{ icon: Ghost, label: 'No recent activity' }]
+                },
+                {
+                    label: 'TIMELINE_HISTORY',
+                    items: historyScheduled.length > 0
+                        ? historyScheduled.map(m => ({ icon: CheckCircle2, label: m.title || m.content.substring(0, 20) + '...', badge: '' }))
+                        : [{ icon: Ghost, label: 'No recent activity' }]
+                },
+                {
+                    label: 'VAULT_HISTORY',
+                    items: historyBatch.length > 0
+                        ? historyBatch.map(m => ({ icon: CheckCircle2, label: m.title || m.content.substring(0, 20) + '...', badge: '' }))
+                        : [{ icon: Ghost, label: 'No recent activity' }]
+                }
+            ]
+        };
+    }
 
     return (
         <aside className="w-[240px] h-screen bg-[#080808] border-r-[0.5px] border-muka-border flex flex-col shrink-0 relative z-50 select-none hidden md:flex">
@@ -142,7 +174,7 @@ export function ContextualRail() {
                                             {item.label}
                                         </span>
                                     </div>
-                                    {item.badge && (
+                                    {item.badge && item.badge !== '' && (
                                         <span className="text-[9px] font-bold text-cyber-red bg-cyber-red/10 px-1.5 py-0.5 rounded-full uppercase tracking-widest">
                                             {item.badge}
                                         </span>

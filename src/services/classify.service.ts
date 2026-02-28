@@ -55,7 +55,7 @@ export async function classifyText(text: string): Promise<ClassificationResult> 
         // Handle Format 1: Array of objects (e.g. [{ label: 'scheduled', score: 0.71 }, ...])
         if (Array.isArray(data) && data.length > 0 && 'label' in data[0] && 'score' in data[0]) {
             // Find the object with the highest score
-            const bestMatch = data.reduce((prev: any, current: any) => (prev.score > current.score) ? prev : current)
+            const bestMatch = data.reduce((prev: { score: number, label: string }, current: { score: number, label: string }) => (prev.score > current.score) ? prev : current)
             topLabel = bestMatch.label.toLowerCase() as Zone
             topScore = bestMatch.score
         }
@@ -102,10 +102,23 @@ export async function classifyText(text: string): Promise<ClassificationResult> 
  * Classifies a raw message and persists it to the `notifications` table.
  */
 export async function ingestAndClassify(payload: IngestPayload, userId: string): Promise<Notification> {
+    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
+
+    if (payload.external_id) {
+        const { data: existing, error } = await supabaseAdmin
+            .from('notifications')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('external_id', payload.external_id)
+            .maybeSingle()
+
+        if (!error && existing) {
+            return existing as Notification;
+        }
+    }
+
     const textToClassify = payload.title ? `Title: ${payload.title}\nContent: ${payload.raw_text}` : payload.raw_text
     const classification = await classifyText(textToClassify)
-
-    if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
 
     const { data, error } = await supabaseAdmin
         .from('notifications')

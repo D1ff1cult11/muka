@@ -81,6 +81,7 @@ export function MasterRail() {
                     )}
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-zinc-900 overflow-hidden border-subpixel group cursor-pointer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src="https://avatar.vercel.sh/muka?size=100"
                         alt="User"

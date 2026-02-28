@@ -3,8 +3,8 @@
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { MessageCard } from './MessageCard';
 import { useMukaStore, Message, ZoneType } from '@/store/useMukaStore';
-import { Lock, Unlock, Zap, Activity, Calendar, Coffee } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Lock, Zap, Activity, Calendar, Coffee } from 'lucide-react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -19,17 +19,11 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
     const { isWindowActive } = useMukaStore();
     const isScheduledRelease = id === 'scheduled' && isWindowActive;
 
-    // Auto-unlock scheduled if window is active
-    const [isUnlocked, setIsUnlocked] = useState(!isLockedByDefault || isScheduledRelease);
+    // Auto-unlock scheduled if window is active, allows manual override
+    const [manualUnlock, setManualUnlock] = useState(false);
     const [isPressing, setIsPressing] = useState(false);
 
-    useEffect(() => {
-        if (isScheduledRelease) {
-            setIsUnlocked(true);
-        } else if (isLockedByDefault) {
-            if (id === 'scheduled') setIsUnlocked(false);
-        }
-    }, [isScheduledRelease, isLockedByDefault, id]);
+    const isUnlocked = manualUnlock || isScheduledRelease || !isLockedByDefault;
 
     const zoneConfig: Record<ZoneType, {
         icon: React.ReactNode,
@@ -124,6 +118,22 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
                                         )}
                                     </Draggable>
                                 ))}
+                                {messages.length === 0 && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="flex flex-col items-center justify-center h-40 mt-10 opacity-30 pointer-events-none"
+                                    >
+                                        <div className={cn("w-12 h-12 rounded-full flex items-center justify-center mb-4 border border-dashed",
+                                            id === 'instant' ? "border-cyber-red" : id === 'scheduled' ? "border-electric-amber" : "border-neon-green"
+                                        )}>
+                                            {config.icon}
+                                        </div>
+                                        <p className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">
+                                            Zone Clear
+                                        </p>
+                                    </motion.div>
+                                )}
                             </AnimatePresence>
                             {provided.placeholder}
                         </div>
@@ -156,7 +166,7 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
                                             initial={{ pathLength: 0 }}
                                             animate={{ pathLength: 1 }}
                                             transition={{ duration: 2, ease: "linear" }}
-                                            onAnimationComplete={() => setIsUnlocked(true)}
+                                            onAnimationComplete={() => setManualUnlock(true)}
                                             cx="48"
                                             cy="48"
                                             r="40"

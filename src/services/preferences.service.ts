@@ -20,7 +20,7 @@ export interface UserPreferences {
 export async function getUserPreferences(userId: string): Promise<UserPreferences> {
     if (!supabaseAdmin) throw new Error('Supabase client not initialized');
 
-    let { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
         .from('user_preferences')
         .select('*')
         .eq('user_id', userId)

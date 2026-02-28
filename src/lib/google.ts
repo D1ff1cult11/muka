@@ -70,13 +70,13 @@ export async function fetchRecentEmails(auth: Auth.OAuth2Client): Promise<Extrac
 
             // Extract headers
             const headers = payload?.headers || [];
-            const subject = headers.find((h: any) => h.name === 'Subject')?.value || 'No Subject';
-            const sender = headers.find((h: any) => h.name === 'From')?.value || 'Unknown Sender';
+            const subject = headers.find((h: { name?: string | null; value?: string | null }) => h.name === 'Subject')?.value || 'No Subject';
+            const sender = headers.find((h: { name?: string | null; value?: string | null }) => h.name === 'From')?.value || 'Unknown Sender';
 
             // Extract body (prefer plain text)
             let body = snippet || '';
             if (payload?.parts) {
-                const textPart = payload.parts.find((part: any) => part.mimeType === 'text/plain');
+                const textPart = payload.parts.find((part: { mimeType?: string | null, body?: { data?: string | null } }) => part.mimeType === 'text/plain');
                 if (textPart?.body?.data) {
                     body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
                 }
@@ -156,10 +156,11 @@ export async function fetchUpcomingAssignments(auth: Auth.OAuth2Client): Promise
                     }
                 }
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Some courses might have coursework disabled for the user (400 invalid_request)
             // Catch, print a short debug warning, and continue to the next course instead of crashing
-            console.warn(`[GClassroom Warning] Skipping course ${course.id}: ${error?.message || 'invalid_request'}`);
+            const msg = error instanceof Error ? error.message : 'invalid_request';
+            console.warn(`[GClassroom Warning] Skipping course ${course.id}: ${msg}`);
             continue;
         }
     }

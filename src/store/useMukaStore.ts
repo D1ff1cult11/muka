@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createClient } from '@/lib/supabase/client';
 import type { NotificationRow } from '@/types/database';
+import { toast } from 'sonner';
 
 export type ZoneType = 'instant' | 'scheduled' | 'batch';
 
@@ -17,6 +18,9 @@ interface MukaState {
     instant: Message[];
     scheduled: Message[];
     batch: Message[];
+    historyInstant: Message[];
+    historyScheduled: Message[];
+    historyBatch: Message[];
     energySaved: number;
     focusScore: number;
     isFocusModeActive: boolean;
@@ -28,7 +32,7 @@ interface MukaState {
     stopFocusSession: () => void;
     decrementTimer: () => void;
     moveMessage: (messageId: string, sourceZone: ZoneType, destinationZone: ZoneType, destinationIndex: number) => void;
-    fetchFeed: () => Promise<void>;
+    fetchFeed: (manual?: boolean) => Promise<void>;
     dismissMessage: (messageId: string, zone: ZoneType) => void;
     snoozeMessage: (messageId: string, zone: ZoneType) => void;
     subscribeToNotifications: (userId: string) => () => void;
@@ -38,6 +42,9 @@ export const useMukaStore = create<MukaState>((set, get) => ({
     instant: [],
     scheduled: [],
     batch: [],
+    historyInstant: [],
+    historyScheduled: [],
+    historyBatch: [],
     energySaved: 0,
     focusScore: 100,
     isFocusModeActive: false,
@@ -60,16 +67,24 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             focusDuration: durationSeconds,
             focusTimeLeft: durationSeconds
         });
+        toast('Focus Mode Engaged', {
+            description: 'Shield active. Deep work session started.',
+        });
     },
 
-    stopFocusSession: () => set({ isFocusModeActive: false, focusTimeLeft: 0 }),
+    stopFocusSession: () => {
+        set({ isFocusModeActive: false, focusTimeLeft: 0 });
+        toast('Focus Mode Disabled', {
+            description: 'Shield deactivated. Standard routing resumed.',
+        });
+    },
 
     decrementTimer: () => set((state) => ({
         focusTimeLeft: Math.max(0, state.focusTimeLeft - 1),
         isFocusModeActive: state.focusTimeLeft > 1 ? state.isFocusModeActive : false
     })),
 
-    fetchFeed: async () => {
+    fetchFeed: async (manual = false) => {
         const { instant, scheduled, batch } = get();
         const cachedIds = [...instant, ...scheduled, ...batch].map(m => m.id);
 
@@ -94,13 +109,13 @@ export const useMukaStore = create<MukaState>((set, get) => ({
 
                 set({
                     isWindowActive,
-                    instant: (data.instant || []).map((n: any) => ({
+                    instant: (data.instant || []).map((n: { id: string, sender: string, raw_text: string, created_at: string }) => ({
                         id: n.id, title: n.sender, content: n.raw_text, sender: n.sender, type: 'instant', createdAt: new Date(n.created_at).getTime()
                     })),
-                    scheduled: (data.scheduled || []).map((n: any) => ({
+                    scheduled: (data.scheduled || []).map((n: { id: string, sender: string, raw_text: string, created_at: string }) => ({
                         id: n.id, title: n.sender, content: n.raw_text, sender: n.sender, type: 'scheduled', createdAt: new Date(n.created_at).getTime()
                     })),
-                    batch: (data.batch || []).map((n: any) => ({
+                    batch: (data.batch || []).map((n: { id: string, sender: string, raw_text: string, created_at: string }) => ({
                         id: n.id, title: n.sender, content: n.raw_text, sender: n.sender, type: 'batch', createdAt: new Date(n.created_at).getTime()
                     })),
                 });
@@ -148,13 +163,21 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                     });
 
                     set({ instant: newInstant, scheduled: newScheduled, batch: newBatch });
+                    if (manual) {
+                        toast.success(`Synched ${newItems.length} new signals`);
+                    }
+                } else if (manual) {
+                    toast('Sync Complete', { description: 'All signals are up to date.' });
                 }
+            } else if (manual) {
+                toast.error('Sync failed', { description: 'Failed to authenticate or reach services.' });
             }
 
             // Sync current stats to DB
             // Telemetry has been removed per user instructions
         } catch (error) {
             console.error('Unified Fetch/Sync Error:', error);
+            if (manual) toast.error('Sync error encountered');
         }
     },
 
@@ -162,8 +185,17 @@ export const useMukaStore = create<MukaState>((set, get) => ({
         const list = [...get()[zone]];
         const index = list.findIndex(m => m.id === messageId);
         if (index !== -1) {
-            list.splice(index, 1);
-            set({ [zone]: list });
+            const removedMsg = list.splice(index, 1)[0];
+
+            // Add to history state
+            const historyKey = zone === 'instant' ? 'historyInstant' : zone === 'scheduled' ? 'historyScheduled' : 'historyBatch';
+            const currentHistory = [...get()[historyKey]];
+            set({
+                [zone]: list,
+                [historyKey]: [removedMsg, ...currentHistory].slice(0, 50) // Keep last 50 for performance
+            });
+
+            toast.success('Signal Acknowledged', { style: { color: zone === 'instant' ? '#FF3366' : '#00FF66' } });
             // Persist to backend
             fetch(`/api/notifications/${messageId}`, {
                 method: 'PATCH',
@@ -186,6 +218,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             // Persist to backend
             const until = new Date();
             until.setHours(until.getHours() + 4); // Default 4hr snooze
+            toast('Signal Snoozed', { description: 'Moved to Schedule for later.' });
             fetch(`/api/notifications/${messageId}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ action: 'snooze', until: until.toISOString() })
@@ -219,7 +252,11 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             set({
                 [sourceZone]: sourceList,
                 [destinationZone]: destinationList,
+                energySaved: newEnergySaved,
+                focusScore: newFocusScore
             });
+
+            toast(`Reclassified to ${destinationZone.toUpperCase()}`);
 
             // Persist Zone Override to Learning Layer
             fetch(`/api/notifications/${messageId}`, {

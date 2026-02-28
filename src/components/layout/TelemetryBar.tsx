@@ -1,13 +1,13 @@
 'use client'
 
-import { Search, Command, Activity, Zap, Shield, RefreshCw } from 'lucide-react'
+import { Search, Command, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMukaStore } from '@/store/useMukaStore'
 import { cn } from '@/lib/utils'
 
 export function TelemetryBar() {
-    const { energySaved, focusScore, instant, scheduled, batch, fetchFeed } = useMukaStore()
+    const { energySaved, focusScore, scheduled, batch, fetchFeed } = useMukaStore()
     const [inputValue, setInputValue] = useState('')
     const [isIngesting, setIsIngesting] = useState(false)
     const [isSyncing, setIsSyncing] = useState(false)
@@ -40,7 +40,7 @@ export function TelemetryBar() {
         setIsSyncing(true)
         try {
             await fetch('/api/ingest/google', { method: 'POST' })
-            await fetchFeed()
+            await fetchFeed(true)
         } catch (error) {
             console.error('Failed to sync:', error)
         } finally {

@@ -1,10 +1,10 @@
 'use client'
 
 import { Message, ZoneType, useMukaStore } from '@/store/useMukaStore';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Check, Mail, BookOpen, Sparkles } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Check, Mail, BookOpen, Sparkles, ChevronDown } from 'lucide-react';
+import { useState, useEffect, memo } from 'react';
 
 interface MessageCardProps {
     message: Message;
@@ -13,28 +13,24 @@ interface MessageCardProps {
     isDragging?: boolean;
 }
 
-export function MessageCard({ message, zoneType, isDragging }: MessageCardProps) {
+export const MessageCard = memo(function MessageCard({ message, zoneType, isDragging }: MessageCardProps) {
     const { dismissMessage } = useMukaStore();
     const isInstant = zoneType === 'instant';
     const isScheduled = zoneType === 'scheduled';
-    const isBatch = zoneType === 'batch';
-
-    const [now, setNow] = useState<number | null>(null);
+    const [now, setNow] = useState<number>(() => Date.now());
+    const [isExpanded, setIsExpanded] = useState(false);
 
     useEffect(() => {
-        setNow(Date.now());
         const interval = setInterval(() => setNow(Date.now()), 60000);
         return () => clearInterval(interval);
     }, []);
 
-    const diff = now !== null ? now - message.createdAt : 0;
+    const diff = now - message.createdAt;
     const mins = Math.floor(diff / 60000);
     const timeAgo = mins < 1 ? 'JUST NOW' : `${mins}M AGO`;
 
     const accentColor = isInstant ? 'cyber-red' : isScheduled ? 'electric-amber' : 'neon-green';
-    const accentClass = isInstant ? 'bg-cyber-red' : isScheduled ? 'bg-electric-amber' : 'bg-neon-green';
     const textAccentClass = isInstant ? 'text-cyber-red' : isScheduled ? 'text-electric-amber' : 'text-neon-green';
-    const borderAccentClass = isInstant ? 'border-cyber-red/30' : isScheduled ? 'border-electric-amber/30' : 'border-neon-green/30';
 
     // Parse logic for the raw text returned from API
     const parseContent = (raw: string) => {
@@ -78,12 +74,32 @@ export function MessageCard({ message, zoneType, isDragging }: MessageCardProps)
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             whileHover={{ y: -2 }}
+            onClick={(e) => {
+                if (!isDragging) {
+                    setIsExpanded(!isExpanded);
+                }
+            }}
             className={cn(
-                "group relative bg-[#111111]/60 backdrop-blur-2xl border border-white/5 p-5 rounded-[24px] transition-all duration-400 overflow-hidden text-left",
+                "group relative bg-[#111111]/60 backdrop-blur-2xl border border-white/5 p-5 rounded-[24px] transition-all duration-400 overflow-hidden text-left cursor-pointer",
                 isDragging && "opacity-50 scale-95 shadow-none border-white/10",
-                !isDragging && `hover:border-${accentColor}/40 hover:bg-[#151515]/80 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]`
+                !isDragging && `hover:border-${accentColor}/40 hover:bg-[#151515]/80 hover:shadow-[0_8px_40px_rgba(0,0,0,0.6)]`
             )}
         >
+            {/* Hover Glimmer / Lightning Effect */}
+            <div className={cn(
+                "absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500 rounded-[24px] overflow-hidden mix-blend-screen",
+                isInstant ? "bg-[radial-gradient(ellipse_at_top,_rgba(255,51,102,0.15),_transparent_70%)]" :
+                    isScheduled ? "bg-[radial-gradient(ellipse_at_top,_rgba(255,204,0,0.15),_transparent_70%)]" :
+                        "bg-[radial-gradient(ellipse_at_top,_rgba(0,255,102,0.15),_transparent_70%)]"
+            )}>
+                <div className={cn(
+                    "absolute top-0 left-0 w-full h-[1px] shadow-[0_0_20px_2px]",
+                    isInstant ? "bg-cyber-red shadow-cyber-red/50" :
+                        isScheduled ? "bg-electric-amber shadow-electric-amber/50" :
+                            "bg-neon-green shadow-neon-green/50"
+                )} />
+            </div>
+
             {/* Header Telemetry */}
             <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-2">
@@ -100,17 +116,38 @@ export function MessageCard({ message, zoneType, isDragging }: MessageCardProps)
             </div>
 
             {/* Content Stage */}
-            <div className="mb-5 mt-2">
-                <h3 className={cn("text-[14px] font-bold leading-[1.3] mb-1.5 transition-colors line-clamp-1",
+            <div className="mb-5 mt-2 relative z-10">
+                <h3 className={cn("text-[15px] font-black tracking-tight leading-[1.3] mb-1.5 transition-colors",
+                    !isExpanded && "line-clamp-1",
                     isInstant ? "group-hover:text-cyber-red text-zinc-100" :
                         isScheduled ? "group-hover:text-electric-amber text-zinc-100" :
                             "group-hover:text-neon-green text-zinc-100"
                 )}>
                     {displayTitle}
                 </h3>
-                <p className="text-[13px] leading-[1.65] text-zinc-400 font-normal group-hover:text-zinc-200 transition-colors line-clamp-2">
+                <motion.div
+                    layout="position"
+                    className={cn(
+                        "text-[12px] leading-[1.6] text-zinc-400 font-medium group-hover:text-zinc-300 transition-colors whitespace-pre-wrap",
+                        !isExpanded && "line-clamp-2"
+                    )}
+                >
                     {displayBody}
-                </p>
+                </motion.div>
+
+                {/* Expand Hint */}
+                <AnimatePresence>
+                    {!isExpanded && displayBody.length > 80 && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mt-3 flex items-center gap-1.5 text-[9px] font-bold tracking-[0.2em] text-zinc-600 uppercase opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                            <ChevronDown className="w-3 h-3" /> Click to read full
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Action Matrix */}
@@ -126,18 +163,18 @@ export function MessageCard({ message, zoneType, isDragging }: MessageCardProps)
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity relative z-20">
                     {isInstant ? (
                         <button
-                            onClick={() => dismissMessage(message.id, 'instant')}
+                            onClick={(e) => { e.stopPropagation(); dismissMessage(message.id, 'instant'); }}
                             className="px-3 py-1.5 bg-cyber-red hover:bg-[#FF4D7D] text-white text-[9px] font-black rounded-[6px] transition-all active:scale-95 uppercase tracking-widest shadow-lg shadow-cyber-red/20"
                         >
                             Acknowledge
                         </button>
                     ) : (
                         <button
-                            onClick={() => dismissMessage(message.id, zoneType)}
-                            className="p-1.5 bg-surface hover:bg-zinc-800 text-zinc-500 hover:text-white rounded-lg transition-all border-subpixel group/btn"
+                            onClick={(e) => { e.stopPropagation(); dismissMessage(message.id, zoneType); }}
+                            className="p-1.5 bg-surface hover:bg-zinc-800 text-zinc-500 hover:text-white rounded-[6px] transition-all border-subpixel group/btn z-20"
                         >
                             <Check className={cn("w-3.5 h-3.5", isScheduled ? "group-hover/btn:text-electric-amber" : "group-hover/btn:text-neon-green")} />
                         </button>
@@ -152,7 +189,7 @@ export function MessageCard({ message, zoneType, isDragging }: MessageCardProps)
             )} />
         </motion.div>
     );
-}
+});
 
 
 

@@ -17,8 +17,8 @@ export async function GET() {
 
         const prefs = await getUserPreferences(user.id);
         return NextResponse.json({ data: prefs });
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 });
+    } catch (err: unknown) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
     }
 }
 
@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest) {
         const updated = await updateUserPreferences(user.id, body);
 
         return NextResponse.json({ data: updated });
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 });
+    } catch (err: unknown) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
     }
 }

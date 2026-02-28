@@ -17,7 +17,7 @@ export async function POST(req: Request) {
         }
 
         // Technically ignore cachedIds since the store fully replaces state
-        const { cachedIds } = await req.json().catch(() => ({ cachedIds: [] }));
+        await req.json().catch(() => ({}));
 
         // Technical Requirement 7: Response (Stateful Sync)
         const notifications = await getNotificationsByZone(user.id);
@@ -38,8 +38,8 @@ export async function POST(req: Request) {
 
         return NextResponse.json(allItems);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Processing Gateway Error:', error);
-        return NextResponse.json({ error: 'Internal Server Error', message: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Internal Server Error', message: error instanceof Error ? error.message : String(error) }, { status: 500 });
     }
 }

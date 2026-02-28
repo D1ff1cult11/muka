@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import {
     Calendar,
     Clock,
-    Bell,
     Zap,
     Info,
     Save,

@@ -5,6 +5,8 @@ import { useMukaStore, ZoneType } from '@/store/useMukaStore';
 import { ZoneColumn } from './ZoneColumn';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export function Dashboard() {
     const { instant, scheduled, batch, moveMessage, fetchFeed, subscribeToNotifications, isFocusModeActive } = useMukaStore();
@@ -67,10 +69,28 @@ export function Dashboard() {
     }
 
     return (
-        <div className="relative w-full h-full min-h-screen py-10 px-6 lg:px-10 overflow-y-auto overflow-x-hidden">
+        <motion.div
+            className={cn(
+                "relative w-full h-full min-h-screen py-10 px-6 lg:px-10 overflow-y-auto overflow-x-hidden transition-all duration-1000",
+                isFocusModeActive ? "bg-[#020502]" : ""
+            )}
+        >
+            {/* Focus Mode Screen Overlay Vignette */}
+            <AnimatePresence>
+                {isFocusModeActive && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 1 }}
+                        className="fixed inset-0 pointer-events-none z-50 shadow-[inset_0_0_200px_rgba(0,255,102,0.15)] ring-[2px] ring-inset ring-neon-green/20"
+                    />
+                )}
+            </AnimatePresence>
+
             {/* Background Auras */}
-            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyber-red/5 blur-[160px] rounded-full animate-pulse-slow pointer-events-none" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-neon-green/5 blur-[160px] rounded-full animate-pulse-slow pointer-events-none" />
+            <div className={cn("absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyber-red/5 blur-[160px] rounded-full pointer-events-none transition-all duration-1000", isFocusModeActive ? "opacity-10" : "animate-pulse-slow")} />
+            <div className={cn("absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-neon-green/5 blur-[160px] rounded-full pointer-events-none transition-all duration-1000", isFocusModeActive ? "opacity-30 scale-110" : "animate-pulse-slow")} />
 
             <DragDropContext onDragEnd={onDragEnd}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16 h-full items-start relative z-10 max-w-[1800px] mx-auto">
@@ -79,6 +99,6 @@ export function Dashboard() {
                     <ZoneColumn id="batch" title="BATCH" messages={batch} isLockedByDefault={true} />
                 </div>
             </DragDropContext>
-        </div>
+        </motion.div>
     );
 }

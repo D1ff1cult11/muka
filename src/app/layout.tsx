@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Outfit, JetBrains_Mono } from "next/font/google";
+import { Toaster } from "@/components/Toaster";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -35,6 +36,7 @@ export default function RootLayout({
         className={`${dmSans.variable} ${outfit.variable} ${jetbrainsMono.variable} antialiased bg-void text-zinc-100 min-h-screen font-sans`}
       >
         {children}
+        <Toaster />
       </body>
     </html>
   );

@@ -6,8 +6,6 @@ import {
     Home,
     Send,
     Calendar,
-    Layers,
-    BarChart2,
     Settings,
     Shield
 } from 'lucide-react'

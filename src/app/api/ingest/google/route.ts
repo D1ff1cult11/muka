@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getGoogleAuth, fetchRecentEmails, fetchUpcomingAssignments } from '@/lib/google';
 import { ingestAndClassify } from '@/services/classify.service';
 
-export async function POST(req: NextRequest) {
+export async function POST() {
     try {
         const supabase = await createClient();
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -33,15 +33,16 @@ export async function POST(req: NextRequest) {
             const emails = await fetchRecentEmails(auth);
             for (const email of emails) {
                 await ingestAndClassify({
+                    external_id: email.id,
                     raw_text: `Subject: ${email.subject}\n\n${email.body}`,
                     source: 'gmail',
                     sender: email.sender,
                 }, user.id);
                 results.emailsIngested++;
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Gmail Fetch Error", e);
-            results.errors.push(`Gmail Error: ${e.message}`);
+            results.errors.push(`Gmail Error: ${e instanceof Error ? e.message : String(e)}`);
         }
 
         // 2. Fetch and ingest upcoming assignments
@@ -49,15 +50,16 @@ export async function POST(req: NextRequest) {
             const assignments = await fetchUpcomingAssignments(auth);
             for (const assignment of assignments) {
                 await ingestAndClassify({
+                    external_id: assignment.id,
                     raw_text: `Assignment: ${assignment.title}\nDue: ${assignment.dueDate.toLocaleString()}\n\n${assignment.description}`,
                     source: 'classroom',
                     sender: 'Google Classroom',
                 }, user.id);
                 results.assignmentsIngested++;
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Classroom Fetch Error", e);
-            results.errors.push(`Classroom Error: ${e.message}`);
+            results.errors.push(`Classroom Error: ${e instanceof Error ? e.message : String(e)}`);
         }
 
         console.log("== GOOGLE SYNC RESULTS ==", results);
@@ -67,8 +69,8 @@ export async function POST(req: NextRequest) {
             data: results,
         }, { status: 200 });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('[POST /api/ingest/google]', err);
-        return NextResponse.json({ error: err.message || 'Unexpected error' }, { status: 500 });
+        return NextResponse.json({ error: err instanceof Error ? err.message : 'Unexpected error' }, { status: 500 });
     }
 }

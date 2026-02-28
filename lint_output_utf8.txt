@@ -1,0 +1,106 @@
+﻿
+> muka@0.1.0 lint
+> eslint
+
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\(app)\protocols\page.tsx
+  5:26  warning  'Zap' is defined but never used            @typescript-eslint/no-unused-vars
+  5:31  warning  'AlertTriangle' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\(app)\telemetry\page.tsx
+  4:18  warning  'AnimatePresence' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\api\feed\route.ts
+  20:17  warning  'cachedIds' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  41:21  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\api\feedback\route.ts
+  31:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\api\ingest\google\route.ts
+   6:28  warning  'req' is defined but never used           @typescript-eslint/no-unused-vars
+  42:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  58:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  70:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\api\ingest\route.ts
+  35:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  51:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\api\notifications\[id]\route.ts
+  93:14  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\api\outbox\route.ts
+  14:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\api\preferences\route.ts
+  20:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  39:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\env-check\page.tsx
+  5:36  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  8:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\env-check\page.tsx:8:9
+   6 |
+   7 |     useEffect(() => {
+>  8 |         setEnv({
+     |         ^^^^^^ Avoid calling setState() directly within an effect
+   9 |             url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  10 |             key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  11 |         })  react-hooks/set-state-in-effect
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\login\actions.ts
+  7:10  warning  'headers' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\outbox\page.tsx
+  4:10  warning  'useMukaStore' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\page.tsx
+  274:104  error  Comments inside children section of tag should be placed inside braces  react/jsx-no-comment-textnodes
+  280:103  error  Comments inside children section of tag should be placed inside braces  react/jsx-no-comment-textnodes
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\app\schedule\page.tsx
+  7:5  warning  'Bell' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\components\DeepWorkOverlay.tsx
+  4:18  warning  'AnimatePresence' is defined but never used  @typescript-eslint/no-unused-vars
+  6:21  warning  'useState' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\components\MessageCard.tsx
+  20:11  warning  'isBatch' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  25:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\components\MessageCard.tsx:25:9
+  23 |
+  24 |     useEffect(() => {
+> 25 |         setNow(Date.now());
+     |         ^^^^^^ Avoid calling setState() directly within an effect
+  26 |         const interval = setInterval(() => setNow(Date.now()), 60000);
+  27 |         return () => clearInterval(interval);
+  28 |     }, []);  react-hooks/set-state-in-effect
+  35:11  warning  'accentClass' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  37:11  warning  'borderAccentClass' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\components\Sidebar.tsx
+   9:5  warning  'Layers' is defined but never used     @typescript-eslint/no-unused-vars
+  10:5  warning  'BarChart2' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Admin\OneDrive\Desktop\MUKA\muka\src\components\ZoneColumn.tsx
+  6:16  warning  'Unlock' is defined but never used     @typescript-eslint/no-unused-vars
+  7:20  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 33 problems (14 errors, 19 warnings)
+

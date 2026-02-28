@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         }, user.id);
 
         return NextResponse.json({ success: true, data: notification });
-    } catch (error: any) {
+    } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Ingestion failed';
         console.error('[INGEST_ERROR]:', message);
         return NextResponse.json({ error: message }, { status: 500 });
@@ -48,7 +48,7 @@ export async function GET() {
 
         const data = await getNotificationsByZone(user.id);
         return NextResponse.json({ success: true, data });
-    } catch (error: any) {
+    } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Fetch failed';
         console.error('[INGEST_GET_ERROR]:', message);
         return NextResponse.json({ error: message }, { status: 500 });

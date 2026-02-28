@@ -271,13 +271,13 @@ export default function Home() {
 
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
             <div className="bg-white/[0.02] border border-white/5 p-12 rounded-[48px] backdrop-blur-3xl hover:bg-white/[0.04] transition-colors">
-              <span className="text-neon-green text-xs font-bold tracking-widest uppercase mb-4 block">// Algorithm</span>
+              <span className="text-neon-green text-xs font-bold tracking-widest uppercase mb-4 block">{/* Algorithm */}</span>
               <p className="text-lg md:text-xl text-zinc-400 leading-relaxed font-light uppercase tracking-wider">
                 Muka is your algorithmic firewall. Every club poster shards your concentration. We <span className="text-white font-medium">ingest, classify, and silence</span> the chaos.
               </p>
             </div>
             <div className="bg-white/[0.02] border border-white/5 p-12 rounded-[48px] backdrop-blur-3xl hover:bg-white/[0.04] transition-colors">
-              <span className="text-cyber-red text-xs font-bold tracking-widest uppercase mb-4 block">// Sovereignty</span>
+              <span className="text-cyber-red text-xs font-bold tracking-widest uppercase mb-4 block">{/* Sovereignty */}</span>
               <p className="text-lg md:text-xl text-zinc-400 leading-relaxed font-light uppercase tracking-wider">
                 The modern student is a product of noise. Take back control of your <span className="text-white font-medium">cognitive bandwidth</span> with agentic interception.
               </p>

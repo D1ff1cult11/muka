@@ -1,9 +1,9 @@
 'use client'
 
 import { useMukaStore } from '@/store/useMukaStore'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Shield, Zap, Power, Timer, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 export function DeepWorkOverlay() {
     const { isFocusModeActive, focusTimeLeft, stopFocusSession, decrementTimer } = useMukaStore()

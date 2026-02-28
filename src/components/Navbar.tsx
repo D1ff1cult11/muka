@@ -51,7 +51,6 @@ export function Navbar() {
                 <div className="text-xs font-bold font-mono tracking-[0.3em] uppercase text-zinc-500">
                     MUKA <span className="text-[#8B5CF6]">AI</span>
                 </div>
-
                 <div className="flex-1 max-w-2xl">
                     <div className="relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-[#8B5CF6] transition-colors" />

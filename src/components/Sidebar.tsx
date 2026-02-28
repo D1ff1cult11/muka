@@ -87,7 +87,7 @@ export function Sidebar() {
 
                 <div className="w-12 h-12 rounded-2xl bg-zinc-900/50 border border-white/5 flex items-center justify-center text-zinc-100 font-bold cursor-pointer hover:bg-zinc-800 transition-all duration-500 shadow-xl overflow-hidden relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-muka-purple/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <span className="text-[11px] font-black z-10 font-mono">JD</span>
+                    <span className="text-xs font-black z-10 font-heading">JD</span>
                 </div>
             </div>
         </aside>

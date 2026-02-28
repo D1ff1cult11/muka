@@ -13,7 +13,7 @@ create table if not exists public.notifications (
 
   -- Content
   raw_text      text          not null,
-  source        text          not null check (source in ('whatsapp', 'email', 'manual')),
+  source        text          not null check (source in ('whatsapp', 'email', 'manual', 'gmail', 'classroom')),
   sender        text,
 
   -- AI Classification

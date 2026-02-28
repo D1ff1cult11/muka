@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
                     raw_text: `Assignment: ${assignment.title}\nDue: ${assignment.dueDate.toLocaleString()}\n\n${assignment.description}`,
                     source: 'classroom',
                     sender: 'Google Classroom',
-                    scheduled_for: assignment.dueDate.toISOString(),
                 });
                 results.assignmentsIngested++;
             }

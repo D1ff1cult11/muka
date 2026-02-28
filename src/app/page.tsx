@@ -19,7 +19,7 @@ export default function Home() {
 
       {/* --- Global Grid Overlay with Fade --- */}
       <div className="fixed inset-0 pointer-events-none z-[1]">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-20" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,#000_80%,transparent_100%)] opacity-30" />
       </div>
 
       {/* --- Navbar --- */}
@@ -44,12 +44,6 @@ export default function Home() {
           <Link href="/login" className="text-xs font-bold text-zinc-400 hover:text-white transition-colors uppercase tracking-widest font-heading">
             Auth
           </Link>
-          <Link
-            href="/signup"
-            className="px-8 py-3.5 rounded-xl bg-white text-black text-xs font-bold tracking-[0.2em] uppercase hover:bg-zinc-200 transition-all shadow-[0_10px_40px_rgba(255,255,255,0.2)] active:scale-95 border border-white font-heading"
-          >
-            Deploy Shield
-          </Link>
         </div>
       </nav>
 
@@ -63,14 +57,14 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8 mx-auto"
+              className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-[#111111]/80 border border-white/5 shadow-[0_4px_20px_rgba(0,0,0,0.5)] backdrop-blur-xl mb-10 mx-auto"
             >
-              <div className="w-2 h-2 rounded-full bg-cyber-red animate-pulse shadow-[0_0_10px_#FF3366]" />
+              <div className="w-2 h-2 rounded-full bg-cyber-red animate-ping shadow-[0_0_15px_#FF3366]" />
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1, ease: "linear" }}
-                className="text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase text-zinc-400"
+                className="text-[10px] sm:text-[11px] font-bold tracking-[0.3em] uppercase text-zinc-300"
               >
                 System Active — V2.4 ALPHA
               </motion.span>
@@ -135,13 +129,14 @@ export default function Home() {
                 ))}
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-                <Link href="/signup" className="group px-10 py-5 rounded-2xl bg-cyber-red text-white text-xs font-bold shadow-[0_20px_60px_rgba(255,51,102,0.4)] hover:shadow-[0_25px_80px_rgba(255,51,102,0.6)] transition-all flex items-center gap-4 uppercase tracking-[0.2em] active:scale-95">
-                  Start Protection
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-8">
+                <Link href="/signup" className="group relative px-10 py-5 rounded-[20px] bg-cyber-red text-white text-xs font-bold shadow-[0_0_40px_rgba(255,51,102,0.3)] hover:shadow-[0_0_60px_rgba(255,51,102,0.5)] hover:scale-[1.02] transition-all flex items-center gap-4 uppercase tracking-[0.2em] active:scale-95 overflow-hidden">
+                  <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="relative z-10">Start Protection</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
                 </Link>
-                <div className="group px-10 py-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-2xl text-xs font-bold text-zinc-400 uppercase tracking-[0.2em] hover:bg-white/10 hover:text-white transition-all cursor-pointer flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-zinc-600 group-hover:bg-neon-green transition-colors" />
+                <div className="group px-10 py-5 rounded-[20px] bg-[#111111]/80 border border-white/5 backdrop-blur-2xl text-xs font-bold text-zinc-400 uppercase tracking-[0.2em] hover:bg-[#151515] hover:border-white/10 hover:text-white transition-all cursor-pointer flex items-center gap-3 shadow-2xl">
+                  <span className="w-2 h-2 rounded-full bg-zinc-600 group-hover:bg-neon-green group-hover:shadow-[0_0_10px_#00FF66] transition-all duration-300" />
                   Live Demo
                 </div>
               </div>

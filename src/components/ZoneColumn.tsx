@@ -65,7 +65,7 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
     return (
         <div className="flex flex-col h-full min-w-0 group/col relative">
             {/* Column Glow */}
-            <div className={cn("absolute -top-20 inset-x-0 h-40 blur-[100px] opacity-0 group-hover/col:opacity-10 transition-opacity duration-1000 rounded-full pointer-events-none", config.accent)} />
+            <div className={cn("absolute -top-10 inset-x-0 h-40 blur-[120px] opacity-0 group-hover/col:opacity-20 transition-opacity duration-1000 rounded-[50%] pointer-events-none", config.accent)} />
 
             {/* Header */}
             <header className="mb-8 flex items-center justify-between px-2 pr-4 relative z-10">
@@ -100,7 +100,7 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
                                 id === 'instant' ? "bg-cyber-red/[0.02] border-cyber-red/20" :
                                     id === 'scheduled' ? "bg-electric-amber/[0.02] border-electric-amber/20" :
                                         "bg-neon-green/[0.02] border-neon-green/20",
-                                snapshot.isDraggingOver && "bg-white/[0.05] border-white/20",
+                                snapshot.isDraggingOver && "bg-[#111111]/40 border-white/10 shadow-[0_0_30px_rgba(255,255,255,0.02)]",
                                 isLockedByDefault && !isUnlocked && "blur-[12px] pointer-events-none opacity-40 grayscale"
                             )}
                         >
@@ -131,79 +131,81 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
                 </Droppable>
 
                 {/* Lock Overlay */}
-                {isLockedByDefault && !isUnlocked && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-x-1 inset-y-0 z-20 flex flex-col items-center justify-center gap-6 bg-void/60 backdrop-blur-3xl rounded-[32px] border-subpixel group-hover/col:border-neon-green/20 transition-colors duration-1000"
-                    >
-                        <div className="relative">
-                            {/* Outer Ring */}
-                            <svg className="w-24 h-24 absolute -inset-4 transform -rotate-90">
-                                <circle
-                                    cx="48"
-                                    cy="48"
-                                    r="40"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    fill="transparent"
-                                    className="text-zinc-900"
-                                />
-                                {isPressing && (
-                                    <motion.circle
-                                        initial={{ pathLength: 0 }}
-                                        animate={{ pathLength: 1 }}
-                                        transition={{ duration: 2, ease: "linear" }}
-                                        onAnimationComplete={() => setIsUnlocked(true)}
+                {
+                    isLockedByDefault && !isUnlocked && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-x-1 inset-y-0 z-20 flex flex-col items-center justify-center gap-6 bg-[#050505]/80 backdrop-blur-2xl rounded-[32px] border border-white/5 group-hover/col:border-neon-green/30 group-hover/col:bg-[#080808]/90 transition-all duration-1000"
+                        >
+                            <div className="relative">
+                                {/* Outer Ring */}
+                                <svg className="w-24 h-24 absolute -inset-4 transform -rotate-90">
+                                    <circle
                                         cx="48"
                                         cy="48"
                                         r="40"
                                         stroke="currentColor"
                                         strokeWidth="2"
                                         fill="transparent"
-                                        strokeDasharray="251.32"
-                                        className="text-neon-green drop-shadow-[0_0_8px_#00FF66]"
+                                        className="text-zinc-900"
+                                    />
+                                    {isPressing && (
+                                        <motion.circle
+                                            initial={{ pathLength: 0 }}
+                                            animate={{ pathLength: 1 }}
+                                            transition={{ duration: 2, ease: "linear" }}
+                                            onAnimationComplete={() => setIsUnlocked(true)}
+                                            cx="48"
+                                            cy="48"
+                                            r="40"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            fill="transparent"
+                                            strokeDasharray="251.32"
+                                            className="text-neon-green drop-shadow-[0_0_8px_#00FF66]"
+                                        />
+                                    )}
+                                </svg>
+
+                                <div className="relative w-16 h-16 rounded-full bg-void border-[0.5px] border-muka-border flex items-center justify-center shadow-2xl">
+                                    <Lock className="w-6 h-6 text-neon-green" />
+                                </div>
+                            </div>
+
+                            <div className="text-center space-y-1">
+                                <p className="text-[12px] font-extrabold font-sans tracking-[0.1em] text-white uppercase">
+                                    Vault Locked
+                                </p>
+                                <p className="text-[9px] font-medium text-zinc-500 uppercase tracking-[0.2em]">
+                                    Deep Work Protection Active
+                                </p>
+                            </div>
+
+                            <button
+                                onMouseDown={() => setIsPressing(true)}
+                                onMouseUp={() => setIsPressing(false)}
+                                onMouseLeave={() => setIsPressing(false)}
+                                onTouchStart={() => setIsPressing(true)}
+                                onTouchEnd={() => setIsPressing(false)}
+                                className="relative overflow-hidden px-8 py-3 bg-surface border-subpixel hover:border-neon-green/30 text-zinc-400 hover:text-white text-[10px] font-bold rounded-xl transition-all shadow-xl active:scale-95 uppercase tracking-[0.2em]"
+                            >
+                                <span className="relative z-10">Hold to Override Shield</span>
+                                {isPressing && (
+                                    <motion.div
+                                        initial={{ x: "-100%" }}
+                                        animate={{ x: "0%" }}
+                                        transition={{ duration: 2, ease: "linear" }}
+                                        className="absolute inset-0 bg-neon-green/10"
                                     />
                                 )}
-                            </svg>
-
-                            <div className="relative w-16 h-16 rounded-full bg-void border-[0.5px] border-muka-border flex items-center justify-center shadow-2xl">
-                                <Lock className="w-6 h-6 text-neon-green" />
-                            </div>
-                        </div>
-
-                        <div className="text-center space-y-1">
-                            <p className="text-[12px] font-extrabold font-sans tracking-[0.1em] text-white uppercase">
-                                Vault Locked
-                            </p>
-                            <p className="text-[9px] font-medium text-zinc-500 uppercase tracking-[0.2em]">
-                                Deep Work Protection Active
-                            </p>
-                        </div>
-
-                        <button
-                            onMouseDown={() => setIsPressing(true)}
-                            onMouseUp={() => setIsPressing(false)}
-                            onMouseLeave={() => setIsPressing(false)}
-                            onTouchStart={() => setIsPressing(true)}
-                            onTouchEnd={() => setIsPressing(false)}
-                            className="relative overflow-hidden px-8 py-3 bg-surface border-subpixel hover:border-neon-green/30 text-zinc-400 hover:text-white text-[10px] font-bold rounded-xl transition-all shadow-xl active:scale-95 uppercase tracking-[0.2em]"
-                        >
-                            <span className="relative z-10">Hold to Override Shield</span>
-                            {isPressing && (
-                                <motion.div
-                                    initial={{ x: "-100%" }}
-                                    animate={{ x: "0%" }}
-                                    transition={{ duration: 2, ease: "linear" }}
-                                    className="absolute inset-0 bg-neon-green/10"
-                                />
-                            )}
-                        </button>
-                    </motion.div>
-                )}
-            </div>
-        </div>
+                            </button>
+                        </motion.div>
+                    )
+                }
+            </div >
+        </div >
     );
 }
 

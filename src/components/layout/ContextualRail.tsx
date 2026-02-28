@@ -10,7 +10,7 @@ const CONTEXT_MAP: Record<string, {
     sections: { label: string, items: { icon: any, label: string, badge?: string }[] }[]
 }> = {
     '/home': {
-        title: 'COMMAND_CENTER',
+        title: '',
         sections: [
             {
                 label: 'FILTERS',
@@ -111,11 +111,13 @@ export function ContextualRail() {
     return (
         <aside className="w-[240px] h-screen bg-[#080808] border-r-[0.5px] border-muka-border flex flex-col shrink-0 relative z-50 select-none hidden md:flex">
             {/* Header */}
-            <header className="h-[72px] flex items-center px-6 border-b-[0.5px] border-muka-border">
-                <h2 className="text-[11px] font-extrabold font-sans tracking-[0.2em] text-zinc-400 uppercase">
-                    {config.title}
-                </h2>
-            </header>
+            {config.title && (
+                <header className="h-[72px] flex items-center px-6 border-b-[0.5px] border-muka-border">
+                    <h2 className="text-[11px] font-extrabold font-sans tracking-[0.2em] text-zinc-400 uppercase">
+                        {config.title}
+                    </h2>
+                </header>
+            )}
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto py-6 px-3 space-y-8">

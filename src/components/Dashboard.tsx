@@ -74,9 +74,9 @@ export function Dashboard() {
 
             <DragDropContext onDragEnd={onDragEnd}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16 h-full items-start relative z-10 max-w-[1800px] mx-auto">
-                    <ZoneColumn id="instant" title="STREAM" messages={instant} />
-                    <ZoneColumn id="scheduled" title="TIMELINE" messages={scheduled} />
-                    <ZoneColumn id="batch" title="VAULT" messages={batch} isLockedByDefault={true} />
+                    <ZoneColumn id="instant" title="INSTANT" messages={instant} />
+                    <ZoneColumn id="scheduled" title="SCHEDULE" messages={scheduled} />
+                    <ZoneColumn id="batch" title="BATCH" messages={batch} isLockedByDefault={true} />
                 </div>
             </DragDropContext>
         </div>

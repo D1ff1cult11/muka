@@ -7,9 +7,34 @@ import { useMukaStore } from '@/store/useMukaStore'
 import { cn } from '@/lib/utils'
 
 export function TelemetryBar() {
-    const [metrics, setMetrics] = useState({ focus: 100, queue: 14, saved: 42 })
+    const { energySaved, focusScore, instant, scheduled, batch, fetchFeed } = useMukaStore()
+    const [inputValue, setInputValue] = useState('')
+    const [isIngesting, setIsIngesting] = useState(false)
     const [isSyncing, setIsSyncing] = useState(false)
-    const { fetchFeed } = useMukaStore()
+
+    const totalQueue = scheduled.length + batch.length
+
+    const handleIngest = async (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && inputValue.trim() && !isIngesting) {
+            setIsIngesting(true)
+            try {
+                const res = await fetch('/api/ingest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: inputValue, source: 'manual' }),
+                })
+
+                if (res.ok) {
+                    setInputValue('')
+                    await fetchFeed()
+                }
+            } catch (error) {
+                console.error('Ingestion failed:', error)
+            } finally {
+                setIsIngesting(false)
+            }
+        }
+    }
 
     const triggerSync = async () => {
         setIsSyncing(true)
@@ -23,18 +48,6 @@ export function TelemetryBar() {
         }
     }
 
-    // Simulate ticking telemetry
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setMetrics(prev => ({
-                ...prev,
-                focus: Math.min(100, Math.max(95, prev.focus + (Math.random() - 0.5))),
-                saved: prev.saved + (Math.random() > 0.8 ? 1 : 0)
-            }))
-        }, 3000)
-        return () => clearInterval(interval)
-    }, [])
-
     return (
         <nav className="h-[72px] w-full bg-void/80 backdrop-blur-2xl border-b-[0.5px] border-muka-border flex items-center justify-between px-8 shrink-0 relative z-40">
             {/* Search / Command Palette */}
@@ -43,12 +56,16 @@ export function TelemetryBar() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-cyber-red transition-colors" />
                     <input
                         type="text"
-                        placeholder="GLOBAL COMMAND PALETTE"
-                        className="w-full bg-surface border-[0.5px] border-muka-border focus:border-cyber-red/50 focus:bg-black rounded-xl py-2.5 pl-12 pr-12 text-[12px] font-bold tracking-[0.1em] text-zinc-200 placeholder-zinc-600 outline-none transition-all"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={handleIngest}
+                        disabled={isIngesting}
+                        placeholder={isIngesting ? "CLASSIFYING..." : "GLOBAL COMMAND PALETTE"}
+                        className="w-full bg-surface border-[0.5px] border-muka-border focus:border-cyber-red/50 focus:bg-black rounded-xl py-2.5 pl-12 pr-12 text-[12px] font-bold tracking-[0.1em] text-zinc-200 placeholder-zinc-600 outline-none transition-all disabled:opacity-50"
                     />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-1 rounded border-subpixel bg-void">
                         <Command className="w-3 h-3 text-zinc-600" />
-                        <span className="text-[10px] font-mono text-zinc-600">K</span>
+                        <span className="text-[10px] font-mono text-zinc-600">ENTER</span>
                     </div>
                 </div>
             </div>
@@ -60,12 +77,12 @@ export function TelemetryBar() {
                         <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Focus Score</span>
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-mono font-bold text-white leading-none">
-                                {metrics.focus.toFixed(1)}%
+                                {focusScore.toFixed(1)}%
                             </span>
                             <div className="w-12 h-1 bg-zinc-900 rounded-full overflow-hidden">
                                 <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${metrics.focus}%` }}
+                                    animate={{ width: `${focusScore}%` }}
                                     className="h-full bg-cyber-red shadow-[0_0_10px_#FF3366]"
                                 />
                             </div>
@@ -77,7 +94,7 @@ export function TelemetryBar() {
                     <div className="flex flex-col items-end">
                         <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Deep Queue</span>
                         <span className="text-sm font-mono font-bold text-electric-amber leading-none">
-                            {metrics.queue.toString().padStart(2, '0')}
+                            {totalQueue.toString().padStart(2, '0')}
                         </span>
                     </div>
 
@@ -86,19 +103,19 @@ export function TelemetryBar() {
                     <div className="flex flex-col items-end">
                         <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest">Focus ROI</span>
                         <span className="text-sm font-mono font-bold text-neon-green leading-none">
-                            +{metrics.saved}m
+                            +{Math.round(energySaved / 60)}m
                         </span>
                     </div>
                 </div>
 
-                {/* Manual Sync Button */}
+                {/* Sync Button */}
                 <button
                     onClick={triggerSync}
                     disabled={isSyncing}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-subpixel bg-surface hover:bg-muka-border transition-colors text-[10px] font-bold font-mono text-zinc-400 hover:text-white disabled:opacity-50"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl border-subpixel bg-surface hover:bg-zinc-900 transition-colors text-[10px] font-black text-zinc-400 hover:text-white disabled:opacity-50"
                 >
-                    <RefreshCw className={cn("w-3.5 h-3.5", isSyncing && "animate-spin text-neon-green")} />
-                    {isSyncing ? "SYNCING..." : "SYNC NOW"}
+                    <RefreshCw className={cn("w-3 h-3", isSyncing && "animate-spin text-cyber-red")} />
+                    {isSyncing ? "SYNCING..." : "SYNC"}
                 </button>
 
                 {/* Status Indicator */}

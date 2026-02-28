@@ -79,9 +79,9 @@ export function MessageCard({ message, zoneType, isDragging }: MessageCardProps)
             exit={{ opacity: 0, scale: 0.98 }}
             whileHover={{ y: -2 }}
             className={cn(
-                "group relative bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 p-4 rounded-[16px] transition-all duration-300 overflow-hidden text-left",
-                isDragging && "opacity-40 scale-95 shadow-none",
-                !isDragging && `hover:${borderAccentClass} hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)]`
+                "group relative bg-[#111111]/60 backdrop-blur-2xl border border-white/5 p-5 rounded-[24px] transition-all duration-400 overflow-hidden text-left",
+                isDragging && "opacity-50 scale-95 shadow-none border-white/10",
+                !isDragging && `hover:border-${accentColor}/40 hover:bg-[#151515]/80 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]`
             )}
         >
             {/* Header Telemetry */}
@@ -100,15 +100,15 @@ export function MessageCard({ message, zoneType, isDragging }: MessageCardProps)
             </div>
 
             {/* Content Stage */}
-            <div className="mb-4 mt-1">
-                <h3 className={cn("text-[13px] font-bold leading-[1.3] mb-1.5 transition-colors line-clamp-1",
+            <div className="mb-5 mt-2">
+                <h3 className={cn("text-[14px] font-bold leading-[1.3] mb-1.5 transition-colors line-clamp-1",
                     isInstant ? "group-hover:text-cyber-red text-zinc-100" :
                         isScheduled ? "group-hover:text-electric-amber text-zinc-100" :
                             "group-hover:text-neon-green text-zinc-100"
                 )}>
                     {displayTitle}
                 </h3>
-                <p className="text-[12px] leading-[1.6] text-zinc-400 font-light group-hover:text-zinc-300 transition-colors line-clamp-2">
+                <p className="text-[13px] leading-[1.65] text-zinc-400 font-normal group-hover:text-zinc-200 transition-colors line-clamp-2">
                     {displayBody}
                 </p>
             </div>

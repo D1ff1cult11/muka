@@ -1,11 +1,19 @@
 import { login, signInWithGoogle } from './actions'
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+    const error = (await searchParams)?.error
+
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-900 text-white selection:bg-neutral-800">
             <div className="w-full max-w-md p-8 bg-neutral-950 border border-neutral-800 rounded-2xl shadow-xl">
                 <h1 className="text-3xl font-bold tracking-tight mb-2 text-center text-neutral-100">Welcome back</h1>
                 <p className="text-sm text-neutral-400 mb-8 text-center">Log in to your account</p>
+
+                {error && (
+                    <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium text-center">
+                        {error}
+                    </div>
+                )}
 
                 <form className="space-y-4">
                     <div className="space-y-1">

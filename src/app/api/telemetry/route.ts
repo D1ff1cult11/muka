@@ -14,6 +14,7 @@ import {
     getLatestSession,
     getAggregateTelemetry,
 } from '@/services/telemetry.service'
+import { createClient } from '@/lib/supabase/server'
 import type { TelemetryPayload } from '@/models/Telemetry.model'
 
 export async function POST(req: NextRequest) {
@@ -27,6 +28,13 @@ export async function POST(req: NextRequest) {
             )
         }
 
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const session = await createTelemetrySession({
             session_start: body.session_start,
             session_end: body.session_end,
@@ -34,7 +42,7 @@ export async function POST(req: NextRequest) {
             instant_count: body.instant_count ?? 0,
             scheduled_count: body.scheduled_count ?? 0,
             batch_count: body.batch_count ?? 0,
-        })
+        }, user.id)
 
         return NextResponse.json({ data: session }, { status: 201 })
     } catch (err) {
@@ -52,9 +60,16 @@ export async function POST(req: NextRequest) {
  */
 export async function GET() {
     try {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const [latest, aggregate] = await Promise.all([
-            getLatestSession(),
-            getAggregateTelemetry(),
+            getLatestSession(user.id),
+            getAggregateTelemetry(user.id),
         ])
 
         return NextResponse.json({ data: { latest, aggregate } }, { status: 200 })

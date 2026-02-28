@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ingestAndClassify } from '@/services/classify.service';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * External Ingestion Gateway
@@ -13,12 +14,20 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Text is required' }, { status: 400 });
         }
 
+        // 0. Authenticate
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         // 1. Ingest and Classify (Synchonous AI sorting)
         const notification = await ingestAndClassify({
             raw_text: text,
             sender: sender || 'User Input',
             source: source,
-        });
+        }, user.id);
 
         return NextResponse.json({
             success: true,

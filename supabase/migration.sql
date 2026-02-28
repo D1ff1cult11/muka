@@ -13,8 +13,10 @@ create table if not exists public.notifications (
 
   -- Content
   raw_text      text          not null,
-  source        text          not null check (source in ('whatsapp', 'email', 'manual')),
+  title         text,
+  source        text          not null check (source in ('whatsapp', 'email', 'manual', 'gmail', 'classroom')),
   sender        text,
+  external_id   text,
 
   -- AI Classification
   zone          text          not null check (zone in ('instant', 'scheduled', 'batch')),
@@ -33,7 +35,10 @@ create table if not exists public.notifications (
   -- Timestamps
   created_at    timestamptz   not null default now(),
   classified_at timestamptz   not null default now(),
-  updated_at    timestamptz   not null default now()
+  updated_at    timestamptz   not null default now(),
+  
+  -- Deduplication
+  unique (user_id, external_id)
 );
 
 -- Indexes
@@ -107,22 +112,30 @@ create index if not exists idx_corrections_zones
   on public.user_corrections (original_zone, corrected_zone);
 
 
+-- Link notifications to users
+ALTER TABLE public.notifications      ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) DEFAULT auth.uid();
+ALTER TABLE public.telemetry_sessions ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) DEFAULT auth.uid();
+ALTER TABLE public.user_corrections   ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) DEFAULT auth.uid();
+
 -- ─────────────────────────────────────────────────────────────
 -- 4. Row Level Security (RLS)
 -- ─────────────────────────────────────────────────────────────
 
-alter table public.notifications      enable row level security;
-alter table public.telemetry_sessions enable row level security;
-alter table public.user_corrections   enable row level security;
+ALTER TABLE public.notifications      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.telemetry_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_corrections   ENABLE ROW LEVEL SECURITY;
 
--- ⚠ Open policies for v1.0 (no auth yet).
--- Replace with auth.uid() checks in Phase 2.
+-- DROP OLD PERMISSIVE POLICIES
+DROP POLICY IF EXISTS "allow all (dev)" ON public.notifications;
+DROP POLICY IF EXISTS "allow all (dev)" ON public.telemetry_sessions;
+DROP POLICY IF EXISTS "allow all (dev)" ON public.user_corrections;
 
-create policy "allow all (dev)"
-  on public.notifications for all using (true);
+-- NEW SECURE POLICIES
+CREATE POLICY "own_notifications" ON public.notifications 
+  FOR ALL USING (auth.uid() = user_id);
 
-create policy "allow all (dev)"
-  on public.telemetry_sessions for all using (true);
+CREATE POLICY "own_telemetry" ON public.telemetry_sessions 
+  FOR ALL USING (auth.uid() = user_id);
 
-create policy "allow all (dev)"
-  on public.user_corrections for all using (true);
+CREATE POLICY "own_corrections" ON public.user_corrections 
+  FOR ALL USING (auth.uid() = user_id);

@@ -42,7 +42,7 @@ export function computeTelemetry(payload: TelemetryPayload): ComputedTelemetry {
  * Creates a new telemetry session snapshot.
  * Called by POST /api/telemetry.
  */
-export async function createTelemetrySession(payload: TelemetryPayload): Promise<TelemetrySession> {
+export async function createTelemetrySession(payload: TelemetryPayload, userId: string): Promise<TelemetrySession> {
     const computed = computeTelemetry(payload)
 
     if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized');
@@ -58,6 +58,7 @@ export async function createTelemetrySession(payload: TelemetryPayload): Promise
             spam_blocked: computed.spam_blocked,
             time_saved_seconds: computed.time_saved_seconds,
             focus_score: computed.focus_score,
+            user_id: userId,
         })
         .select()
         .single()
@@ -73,11 +74,12 @@ export async function createTelemetrySession(payload: TelemetryPayload): Promise
  * Fetches the most recent telemetry session.
  * Used to populate the scoreboard on the dashboard.
  */
-export async function getLatestSession(): Promise<TelemetrySession | null> {
+export async function getLatestSession(userId: string): Promise<TelemetrySession | null> {
     if (!supabaseAdmin) return null;
     const { data, error } = await supabaseAdmin
         .from('telemetry_sessions')
         .select('*')
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1)
         .single()
@@ -90,7 +92,7 @@ export async function getLatestSession(): Promise<TelemetrySession | null> {
  * Fetches aggregate totals across all sessions.
  * Used for the all-time stats view.
  */
-export async function getAggregateTelemetry(): Promise<{
+export async function getAggregateTelemetry(userId: string): Promise<{
     total_ingested: number
     total_spam_blocked: number
     total_time_saved_seconds: number
@@ -109,6 +111,7 @@ export async function getAggregateTelemetry(): Promise<{
     const { data, error } = await supabaseAdmin
         .from('telemetry_sessions')
         .select('total_ingested, spam_blocked, time_saved_seconds, focus_score')
+        .eq('user_id', userId)
 
     if (error || !data) {
         return {
@@ -142,7 +145,7 @@ export async function getAggregateTelemetry(): Promise<{
  * Logs a user correction when they move a notification to a different zone.
  * Called by POST /api/corrections.
  */
-export async function logUserCorrection(payload: CorrectionPayload): Promise<UserCorrection> {
+export async function logUserCorrection(payload: CorrectionPayload, userId: string): Promise<UserCorrection> {
     if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized');
     const { data, error } = await supabaseAdmin
         .from('user_corrections')
@@ -152,6 +155,7 @@ export async function logUserCorrection(payload: CorrectionPayload): Promise<Use
             corrected_zone: payload.corrected_zone,
             raw_text_snapshot: payload.raw_text_snapshot,
             ai_confidence: payload.ai_confidence ?? null,
+            user_id: userId,
         })
         .select()
         .single()
@@ -166,11 +170,12 @@ export async function logUserCorrection(payload: CorrectionPayload): Promise<Use
 /**
  * Fetches all corrections — useful for analytics or future model fine-tuning.
  */
-export async function getAllCorrections(): Promise<UserCorrection[]> {
+export async function getAllCorrections(userId: string): Promise<UserCorrection[]> {
     if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized');
     const { data, error } = await supabaseAdmin
         .from('user_corrections')
         .select('*')
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
     if (error) throw new Error(`Failed to fetch corrections: ${error.message}`)

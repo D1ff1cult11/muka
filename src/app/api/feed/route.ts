@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ingestAndClassify, getNotificationsByZone } from '@/services/classify.service';
 
 /**
  * Technical Requirement 3: Parallel Fetching (Optimized)
@@ -71,7 +72,7 @@ async function fetchClassroom(accessToken: string) {
  * Uses Zero-Shot classification to label notifications.
  */
 async function classifyMessage(title: string, snippet: string) {
-    const API_KEY = process.env.HUGGING_FACE_API_KEY;
+    const API_KEY = process.env.HUGGINGFACE_API_KEY;
     if (!API_KEY) return 'Batch'; // Fallback if no key
 
     const content = `Title: ${title}\nContent: ${snippet}`;
@@ -108,13 +109,14 @@ export async function POST(req: Request) {
         // Technical Requirement 2: Authentication
         // Adapting for Supabase as per project architecture
         const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
         const { data: { session }, error: authError } = await supabase.auth.getSession();
 
         // In Supabase, the provider_token (Google Access Token) is available if enabled in the dashboard
         // Note: This requires the 'google' provider to be linked and configured to store tokens.
         const accessToken = session?.provider_token;
 
-        if (!accessToken || authError) {
+        if (!user || !accessToken || authError) {
             return NextResponse.json({ error: 'Unauthorized: Missing Google Access Token' }, { status: 401 });
         }
 
@@ -134,16 +136,36 @@ export async function POST(req: Request) {
             return NextResponse.json([]);
         }
 
-        // Technical Requirement 6: AI Classification in Parallel
-        const classifiedItems = await Promise.all(
+        // Technical Requirement 6: Persistent AI Classification
+        await Promise.allSettled(
             newItems.map(async (item) => {
-                const label = await classifyMessage(item.title, item.snippet);
-                return { ...item, label };
+                return ingestAndClassify({
+                    raw_text: item.snippet,
+                    title: item.title,
+                    sender: item.source === 'gmail' ? 'Gmail' : 'Classroom',
+                    source: item.source,
+                    external_id: item.id
+                }, user.id);
             })
         );
 
-        // Technical Requirement 7: Response
-        return NextResponse.json(classifiedItems);
+        // Technical Requirement 7: Response (Stateful Sync)
+        const notifications = await getNotificationsByZone(user.id);
+        const allItems = [
+            ...notifications.instant,
+            ...notifications.scheduled,
+            ...notifications.batch
+        ].map(n => ({
+            id: n.id,
+            external_id: n.external_id,
+            title: n.title || n.raw_text.substring(0, 50),
+            snippet: n.raw_text,
+            source: n.source,
+            label: n.zone.charAt(0).toUpperCase() + n.zone.slice(1),
+            timestamp: n.created_at
+        }));
+
+        return NextResponse.json(allItems);
 
     } catch (error: any) {
         // Technical Requirement 8: Error Handling

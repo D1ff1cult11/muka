@@ -5,23 +5,19 @@ import { motion } from 'framer-motion'
 import {
     Home,
     Send,
-    Calendar,
-    Settings,
-    Shield
+    Calendar
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
 export function Sidebar() {
-    const { isFocusModeActive, toggleFocusMode } = useMukaStore()
     const pathname = usePathname()
 
     const navItems = [
         { icon: Home, label: 'Dashboard', href: '/dashboard' },
         { icon: Send, label: 'Outbox', href: '/outbox' },
         { icon: Calendar, label: 'Schedule', href: '/schedule' },
-        { icon: Settings, label: 'Settings', href: '#' },
     ]
 
     return (
@@ -65,27 +61,12 @@ export function Sidebar() {
                 })}
             </nav>
 
-            {/* Shield / Focus Mode Toggle */}
+            {/* Bottom Section */}
             <div className="mt-auto flex flex-col items-center gap-8">
-                <div
-                    onClick={toggleFocusMode}
-                    className={cn(
-                        "w-14 h-14 rounded-full flex items-center justify-center cursor-pointer transition-all duration-1000 relative group",
-                        isFocusModeActive
-                            ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.1)]"
-                            : "bg-white/5 border border-white/5 text-zinc-600 hover:text-zinc-100 hover:bg-white/10"
-                    )}
-                >
-                    <Shield className={cn("w-6 h-6 transition-transform duration-700", isFocusModeActive && "scale-110 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]")} />
-                    {isFocusModeActive && (
-                        <div className="absolute inset-0 rounded-full border border-emerald-500/40 animate-ping opacity-10" />
-                    )}
-                </div>
-
-                <div className="w-12 h-12 rounded-2xl bg-zinc-900/50 border border-white/5 flex items-center justify-center text-zinc-100 font-bold cursor-pointer hover:bg-zinc-800 transition-all duration-500 shadow-xl overflow-hidden relative group">
+                <Link href="/profile" className="w-12 h-12 rounded-2xl bg-zinc-900/50 border border-white/5 flex items-center justify-center text-zinc-100 font-bold cursor-pointer hover:bg-zinc-800 transition-all duration-500 shadow-xl overflow-hidden relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-muka-purple/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <span className="text-xs font-black z-10 font-heading">JD</span>
-                </div>
+                    <span className="text-xs font-black z-10 font-heading" title="User Profile">ME</span>
+                </Link>
             </div>
         </aside>
     )

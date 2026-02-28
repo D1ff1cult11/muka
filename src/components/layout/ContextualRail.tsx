@@ -5,8 +5,9 @@ import { Plus, Hash, Ghost, Zap, Bell, ShieldCheck, Archive, Search, Target, Shi
 import { useMukaStore, ZoneType } from '@/store/useMukaStore'
 import { cn } from '@/lib/utils'
 import { MessageCard } from '@/components/MessageCard'
-
-import React from 'react';
+import { createClient } from '@/lib/supabase/client'
+import React, { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 const CONTEXT_MAP: Record<string, {
     title: string,
@@ -86,6 +87,21 @@ const CONTEXT_MAP: Record<string, {
 export function ContextualRail() {
     const pathname = usePathname()
     const { historyInstant, historyScheduled, historyBatch } = useMukaStore()
+    const [user, setUser] = useState<{ name: string, email: string } | null>(null)
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                setUser({
+                    name: user.user_metadata?.full_name || 'System Sovereign',
+                    email: user.email || ''
+                })
+            }
+        }
+        fetchUser()
+    }, [])
 
     // Dynamically build the configuration for /home to inject history
     const baseConfig = CONTEXT_MAP[pathname] || CONTEXT_MAP['/home'];
@@ -176,14 +192,22 @@ export function ContextualRail() {
             {/* Bottom Status */}
             <footer className="p-4 border-t-[0.5px] border-muka-border bg-surface/[0.5]">
                 <div className="flex items-center gap-3">
-                    <div className="relative">
+                    <div className="relative shrink-0">
                         <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_#10B981]" />
                         <div className="absolute inset-0 w-3 h-3 rounded-full bg-emerald-500 animate-ping opacity-30" />
                     </div>
-                    <div>
-                        <p className="text-[11px] font-bold text-zinc-200">System Sovereign</p>
-                        <p className="text-[9px] font-medium text-zinc-500 uppercase tracking-widest">Latency: 14ms</p>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold text-zinc-200 truncate">{user ? user.name : 'System Sovereign'}</p>
+                        {user?.email && (
+                            <p className="text-[9px] font-medium text-zinc-500 truncate">{user.email}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[9px] font-medium text-zinc-500 uppercase tracking-widest">Latency: 14ms</p>
+                        </div>
                     </div>
+                    <Link href="/settings" className="shrink-0 text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer p-1">
+                        <Settings className="w-4 h-4" />
+                    </Link>
                 </div>
             </footer>
         </aside>

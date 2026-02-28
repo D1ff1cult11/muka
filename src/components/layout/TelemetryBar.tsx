@@ -32,6 +32,7 @@ export function TelemetryBar() {
                 <div className="relative group w-full">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-cyber-red transition-colors" />
                     <input
+                        suppressHydrationWarning
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -49,6 +50,7 @@ export function TelemetryBar() {
             <div className="flex-1 flex items-center justify-end gap-3 md:gap-6 relative z-10 ml-auto">
                 {/* Sync Button */}
                 <button
+                    suppressHydrationWarning
                     onClick={triggerSync}
                     disabled={isSyncing}
                     className="flex items-center gap-2 px-3 py-2 rounded-xl border-subpixel bg-surface hover:bg-zinc-900 transition-colors text-[10px] font-black text-zinc-400 hover:text-white disabled:opacity-50"

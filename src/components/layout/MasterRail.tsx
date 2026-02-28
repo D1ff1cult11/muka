@@ -1,9 +1,10 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Home, FileText, Activity, ShieldAlert, Settings, Shield } from 'lucide-react'
+import { Home, FileText, Activity, ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useMukaStore } from '@/store/useMukaStore'
 
 const NAV_ITEMS = [
@@ -11,7 +12,6 @@ const NAV_ITEMS = [
     { icon: FileText, path: '/ledger', label: 'Ledger' },
     { icon: Activity, path: '/telemetry', label: 'Telemetry' },
     { icon: ShieldAlert, path: '/protocols', label: 'Firewall Protocols' },
-    { icon: Settings, path: '/settings', label: 'Controller Settings' },
 ]
 
 export function MasterRail() {
@@ -65,29 +65,14 @@ export function MasterRail() {
 
             {/* Bottom Actions */}
             <div className="mt-auto flex flex-col items-center gap-6">
-                <div
-                    onClick={toggleFocusMode}
-                    className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center cursor-pointer transition-all duration-700 relative group",
-                        isFocusModeActive
-                            ? "bg-cyber-red/10 border border-cyber-red/30 text-cyber-red shadow-[0_0_20px_rgba(255,51,102,0.1)]"
-                            : "bg-surface border border-white/5 text-zinc-600 hover:text-zinc-100 hover:bg-zinc-800"
-                    )}
-                    title={isFocusModeActive ? "Deactivate Shield" : "Activate Focus Shield"}
-                >
-                    <Shield className={cn("w-5 h-5 transition-transform duration-500", isFocusModeActive && "scale-110 drop-shadow-[0_0_8px_rgba(255,51,102,0.5)]")} />
-                    {isFocusModeActive && (
-                        <div className="absolute inset-0 rounded-2xl border border-cyber-red/40 animate-ping opacity-10" />
-                    )}
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-zinc-900 overflow-hidden border-subpixel group cursor-pointer">
+                <Link href="/profile" className="w-10 h-10 rounded-xl bg-zinc-900 overflow-hidden border-subpixel group cursor-pointer block">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src="https://avatar.vercel.sh/muka?size=100"
                         alt="User"
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
-                </div>
+                </Link>
             </div>
         </aside>
     )

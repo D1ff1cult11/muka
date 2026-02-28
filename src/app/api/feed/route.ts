@@ -79,9 +79,12 @@ async function classifyMessage(title: string, snippet: string) {
 
     try {
         const response = await fetch(
-            "https://api-inference.huggingface.co/models/facebook/bart-large-mnli",
+            "https://router.huggingface.co/hf-inference/models/facebook/bart-large-mnli",
             {
-                headers: { Authorization: `Bearer ${API_KEY}` },
+                headers: {
+                    Authorization: `Bearer ${API_KEY}`,
+                    "Content-Type": "application/json"
+                },
                 method: "POST",
                 body: JSON.stringify({
                     inputs: content,

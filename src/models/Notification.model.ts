@@ -19,7 +19,7 @@ export type Notification = NotificationRow
  */
 export interface IngestPayload {
     raw_text: string
-    source: string
+    source: 'whatsapp' | 'email' | 'manual' | 'classroom' | 'gmail' | string
     sender?: string
     title?: string
     external_id?: string

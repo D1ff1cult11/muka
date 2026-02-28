@@ -8,7 +8,7 @@ import { supabaseAdmin } from '@/lib/db'
 import type { ClassificationResult, IngestPayload, Notification } from '@/models/Notification.model'
 import type { Zone } from '@/types/database'
 
-const HF_API_URL = 'https://api-inference.huggingface.co/models/facebook/bart-large-mnli'
+const HF_API_URL = 'https://router.huggingface.co/hf-inference/models/facebook/bart-large-mnli'
 const CONFIDENCE_THRESHOLD = 0.55  // below this, fallback safety logic triggers
 
 // The three candidate labels passed to the zero-shot model
@@ -78,6 +78,7 @@ export async function ingestAndClassify(payload: IngestPayload, userId: string):
             source: payload.source,
             sender: payload.sender ?? null,
             external_id: payload.external_id ?? null,
+            scheduled_for: payload.scheduled_for ?? null,
             zone: classification.zone,
             confidence: classification.confidence,
             ai_model: classification.ai_model,

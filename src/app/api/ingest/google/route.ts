@@ -3,14 +3,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getGoogleAuth, fetchLatestEmail, fetchUpcomingAssignments } from '@/lib/google';
 import { ingestAndClassify } from '@/services/classify.service';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
-        const { accessToken, refreshToken } = body;
+        const supabase = await createClient();
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error || !session) {
+            return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+        }
+
+        const accessToken = session.provider_token;
+        const refreshToken = session.provider_refresh_token ?? undefined; // handle null type mismatch
 
         if (!accessToken) {
-            return NextResponse.json({ error: '`accessToken` is required.' }, { status: 400 });
+            return NextResponse.json({ error: 'Google Access Token not found in session. Please sign in with Google.' }, { status: 400 });
         }
 
         const supabase = await createClient();

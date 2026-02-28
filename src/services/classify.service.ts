@@ -8,22 +8,35 @@ import { supabaseAdmin } from '@/lib/db'
 import type { ClassificationResult, IngestPayload, Notification } from '@/models/Notification.model'
 import type { Zone } from '@/types/database'
 
-const HF_API_URL = 'https://router.huggingface.co/hf-inference/models/facebook/bart-large-mnli'
+const HF_API_URL = 'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct'
 const CONFIDENCE_THRESHOLD = 0.55  // below this, fallback safety logic triggers
 
-// The three candidate labels passed to the zero-shot model
-const CANDIDATE_LABELS: Zone[] = ['instant', 'scheduled', 'batch']
-
 // ─────────────────────────────────────────────────────────────
-// AI Classification
+// AI Classification & BLUF Extraction
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Calls the Hugging Face zero-shot classification API and returns
- * the zone, confidence score, and whether a fallback was used.
+ * Calls the Hugging Face Generative API to act as an extraction engine.
+ * Returns the zone (classification) and the BLUF (Bottom Line Up Front).
  */
 export async function classifyText(text: string): Promise<ClassificationResult> {
     try {
+        const systemPrompt = `You are a highly efficient data extractor for a student dashboard. 
+Analyze the provided text.
+1. Classify it strictly as exactly one of: "instant", "scheduled", or "batch".
+   - "instant": Urgent, due very soon, critical alerts.
+   - "scheduled": Due in a few days, requires planning.
+   - "batch": Low priority, long-term, passive reading.
+2. Extract the "bluf" (Bottom Line Up Front)—a maximum 10-word string containing ONLY the core action item, deadline, or fact. Strip all pleasantries.
+
+You must reply with ONLY a raw, minified JSON object matching this schema exactly, with no markdown formatting or backticks:
+{"classification": "<zone>", "bluf": "<10-word summary>"}
+
+TEXT TO ANALYZE:
+---
+${text}
+---`;
+
         const response = await fetch(HF_API_URL, {
             method: 'POST',
             headers: {
@@ -31,63 +44,59 @@ export async function classifyText(text: string): Promise<ClassificationResult> 
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                inputs: text,
-                parameters: { candidate_labels: CANDIDATE_LABELS },
+                inputs: systemPrompt,
+                parameters: {
+                    max_new_tokens: 100,
+                    return_full_text: false,
+                    temperature: 0.1 // Low temp for strict formatting
+                },
             }),
-        })
+        });
 
         if (!response.ok) {
-            console.warn(`Hugging Face API returned error: ${response.status}. Using default fallback (Instant).`)
+            console.warn(`Hugging Face API returned error: ${response.status}. Using default fallback.`);
+            const fallbackBluf = text.split(/\s+/).slice(0, 10).join(' ') + '...';
             return {
                 zone: 'instant',
                 confidence: 0,
+                bluf: fallbackBluf,
                 ai_model: 'fallback-static',
                 fallback_used: true,
             }
         }
 
-        const data = await response.json()
+        const data = await response.json();
+        const generatedText = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
 
-        // Variable to hold parsed results
-        let topLabel: Zone = 'batch'
-        let topScore: number = 0
+        if (!generatedText) throw new Error("No generated text found");
 
-        // Handle Format 1: Array of objects (e.g. [{ label: 'scheduled', score: 0.71 }, ...])
-        if (Array.isArray(data) && data.length > 0 && 'label' in data[0] && 'score' in data[0]) {
-            // Find the object with the highest score
-            const bestMatch = data.reduce((prev: { score: number, label: string }, current: { score: number, label: string }) => (prev.score > current.score) ? prev : current)
-            topLabel = bestMatch.label.toLowerCase() as Zone
-            topScore = bestMatch.score
-        }
-        // Handle Format 2: Object with labels and scores arrays (e.g. { labels: ['scheduled', ...], scores: [0.71, ...] })
-        else if (data && data.labels && data.scores && Array.isArray(data.labels) && Array.isArray(data.scores)) {
-            topLabel = data.labels[0].toLowerCase() as Zone
-            topScore = data.scores[0]
-        }
-        // Fallback: Unrecognized response shape
-        else {
-            console.error('[HuggingFace Fallback]: Unexpected AI response shape', data)
-            return {
-                zone: 'instant', // Fallback to instant so user doesn't miss anything 
-                confidence: 0,
-                ai_model: 'fallback',
-                fallback_used: true,
-            }
+        // Clean up the output to ensure we just have the JSON
+        const cleanJsonString = generatedText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanJsonString);
+
+        let topLabel: Zone = 'instant';
+        const rawClass = parsed.classification?.toLowerCase();
+        if (['instant', 'scheduled', 'batch'].includes(rawClass)) {
+            topLabel = rawClass as Zone;
         }
 
-        const fallback_used = topScore < CONFIDENCE_THRESHOLD
+        const blufText = parsed.bluf || text.split(/\s+/).slice(0, 10).join(' ') + '...';
 
         return {
-            zone: fallback_used ? 'instant' : topLabel,
-            confidence: topScore,
-            ai_model: 'facebook/bart-large-mnli',
-            fallback_used,
+            zone: topLabel,
+            confidence: 0.95, // Generative models don't return classification logits out-of-the-box easily, assuming high confidence on successful parse
+            bluf: blufText,
+            ai_model: 'meta-llama/Meta-Llama-3-8B-Instruct',
+            fallback_used: false,
         }
+
     } catch (e) {
-        console.error('AI Classification critical failure. defaulting to Instant.', e)
+        console.error('AI Classification critical failure. defaulting to Instant.', e);
+        const fallbackBluf = text.split(/\s+/).slice(0, 10).join(' ') + '...';
         return {
             zone: 'instant',
             confidence: 0,
+            bluf: fallbackBluf,
             ai_model: 'error-fallback',
             fallback_used: true,
         }

@@ -9,6 +9,7 @@ export interface Message {
     id: string;
     title?: string;
     content: string;
+    bluf?: string;
     sender?: string;
     type: ZoneType;
     createdAt: number;
@@ -110,17 +111,16 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                 const now = new Date();
                 const currentTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
                 const isWindowActive = windows.some(w => w.active && w.time === currentTimeStr);
-
                 set({
                     isWindowActive,
-                    instant: (data.instant || []).map((n: { id: string, sender: string, raw_text: string, created_at: string }) => ({
-                        id: n.id, title: n.sender, content: n.raw_text, sender: n.sender, type: 'instant', createdAt: new Date(n.created_at).getTime()
+                    instant: (data.instant || []).map((n: any) => ({
+                        id: n.id, title: n.title || n.sender, content: n.raw_text, bluf: n.bluf, sender: n.sender, type: 'instant', createdAt: new Date(n.created_at).getTime()
                     })),
-                    scheduled: (data.scheduled || []).map((n: { id: string, sender: string, raw_text: string, created_at: string }) => ({
-                        id: n.id, title: n.sender, content: n.raw_text, sender: n.sender, type: 'scheduled', createdAt: new Date(n.created_at).getTime()
+                    scheduled: (data.scheduled || []).map((n: any) => ({
+                        id: n.id, title: n.title || n.sender, content: n.raw_text, bluf: n.bluf, sender: n.sender, type: 'scheduled', createdAt: new Date(n.created_at).getTime()
                     })),
-                    batch: (data.batch || []).map((n: { id: string, sender: string, raw_text: string, created_at: string }) => ({
-                        id: n.id, title: n.sender, content: n.raw_text, sender: n.sender, type: 'batch', createdAt: new Date(n.created_at).getTime()
+                    batch: (data.batch || []).map((n: any) => ({
+                        id: n.id, title: n.title || n.sender, content: n.raw_text, bluf: n.bluf, sender: n.sender, type: 'batch', createdAt: new Date(n.created_at).getTime()
                     })),
                 });
             }
@@ -154,6 +154,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                             id: item.id,
                             title: item.title,
                             content: item.snippet,
+                            bluf: (item as any).bluf, // Temporary any cast since feed API doesn't define bluf in this scope yet
                             sender: item.sender || (item.source.charAt(0).toUpperCase() + item.source.slice(1)),
                             type: item.label.toLowerCase() as ZoneType,
                             createdAt: new Date(item.timestamp).getTime(),
@@ -300,6 +301,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                         id: newItem.id,
                         title: newItem.title ?? 'New Notification',
                         content: newItem.raw_text,
+                        bluf: newItem.bluf ?? undefined,
                         sender: newItem.sender || (newItem.source === 'gmail' ? 'Gmail' : (newItem.source === 'classroom' ? 'Classroom' : 'Muka')),
                         type: newItem.zone,
                         createdAt: new Date(newItem.created_at).getTime(),

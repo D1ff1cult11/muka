@@ -241,32 +241,79 @@ export async function fetchRecentAnnouncements(auth: Auth.OAuth2Client): Promise
 }
 
 /**
- * Gets a quick count of unread emails in the inbox.
+ * Retrieves the count of unread emails in the user's inbox.
+ * Added to support the realtime telemetry / analytics endpoint.
  */
 export async function fetchUnreadEmailsCount(auth: Auth.OAuth2Client): Promise<number> {
     const gmail = google.gmail({ version: 'v1', auth });
+
     try {
-        const res = await gmail.users.messages.list({
+        const listRes = await gmail.users.messages.list({
             userId: 'me',
             q: 'is:unread in:inbox',
-            maxResults: 1
+            maxResults: 100, // Reasonable cap for calculating queue burden
         });
-        return res.data.resultSizeEstimate || 0;
-    } catch (e) {
-        console.error('[Gmail] fetchUnreadEmailsCount error:', e);
+
+        return listRes.data.resultSizeEstimate || (listRes.data.messages?.length ?? 0);
+    } catch (e: any) {
+        console.error('[Google API] Error fetching unread email count', e);
         return 0;
     }
 }
 
 /**
- * Gets a quick count of upcoming assignments across active courses.
+ * Retrieves the count of pending assignments (due in the future) across active courses.
+ * Added to support the realtime telemetry / analytics endpoint.
  */
 export async function fetchPendingAssignmentsCount(auth: Auth.OAuth2Client): Promise<number> {
+    const classroom = google.classroom({ version: 'v1', auth });
+
     try {
-        const assignments = await fetchUpcomingAssignments(auth);
-        return assignments.length;
-    } catch (e) {
-        console.error('[GClassroom] fetchPendingAssignmentsCount error:', e);
+        const coursesRes = await classroom.courses.list({
+            courseStates: ['ACTIVE'],
+        });
+
+        const courses = coursesRes.data.courses;
+        if (!courses || courses.length === 0) return 0;
+
+        let pendingCount = 0;
+        const now = new Date();
+
+        for (const course of courses) {
+            if (!course.id) continue;
+            try {
+                const workRes = await classroom.courses.courseWork.list({
+                    courseId: course.id,
+                });
+
+                const courseWork = workRes.data.courseWork;
+                if (!courseWork) continue;
+
+                for (const work of courseWork) {
+                    if (work.dueDate && work.dueDate.year && work.dueDate.month && work.dueDate.day) {
+                        const dueDate = new Date(
+                            work.dueDate.year,
+                            work.dueDate.month - 1,
+                            work.dueDate.day,
+                            work.dueTime?.hours || 23,
+                            work.dueTime?.minutes || 59
+                        );
+                        if (dueDate > now) {
+                            pendingCount++;
+                        }
+                    } else {
+                        // Assignments without due dates are basically 'pending'
+                        pendingCount++;
+                    }
+                }
+            } catch (courseErr: any) {
+                // Ignore per-course errors (like disabled coursework)
+            }
+        }
+
+        return pendingCount;
+    } catch (e: any) {
+        console.error('[Google API] Error fetching pending assignments count', e);
         return 0;
     }
 }

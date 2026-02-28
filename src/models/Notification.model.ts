@@ -33,6 +33,7 @@ export interface ClassificationResult {
     zone: Zone
     confidence: number
     ai_model: string
+    bluf?: string
     fallback_used: boolean
 }
 

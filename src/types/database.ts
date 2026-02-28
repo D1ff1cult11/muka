@@ -44,6 +44,7 @@ export interface NotificationRow {
     fallback_used: boolean
     user_zone: Zone | null
     user_id: string
+    bluf: string | null
     scheduled_for: string | null
     is_dismissed: boolean
     is_snoozed: boolean
@@ -62,6 +63,7 @@ export type NotificationInsert = Omit<NotificationRow,
     fallback_used?: boolean
     user_zone?: Zone | null
     user_id?: string
+    bluf?: string | null
     scheduled_for?: string | null
     is_dismissed?: boolean
     is_snoozed?: boolean

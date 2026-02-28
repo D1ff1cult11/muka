@@ -17,6 +17,8 @@ export const MessageCard = memo(function MessageCard({ message, zoneType, isDrag
     const { dismissMessage } = useMukaStore();
     const isInstant = zoneType === 'instant';
     const isScheduled = zoneType === 'scheduled';
+    const isBatch = zoneType === 'batch';
+
     const [now, setNow] = useState<number>(() => Date.now());
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -133,11 +135,12 @@ export const MessageCard = memo(function MessageCard({ message, zoneType, isDrag
                 <motion.div
                     layout="position"
                     className={cn(
-                        "text-[12px] leading-[1.6] text-zinc-400 font-medium group-hover:text-zinc-300 transition-colors whitespace-pre-wrap",
-                        !isExpanded && "line-clamp-2"
+                        "text-[15px] leading-[1.6] font-medium transition-colors cursor-pointer",
+                        isExpanded ? "text-white" : "text-zinc-300 group-hover:text-white"
                     )}
+                    onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
                 >
-                    {displayBody}
+                    {message.bluf || displayBody.split(' ').slice(0, 10).join(' ') + '...'}
                 </motion.div>
 
                 {/* Expand Hint */}
@@ -149,7 +152,25 @@ export const MessageCard = memo(function MessageCard({ message, zoneType, isDrag
                             exit={{ opacity: 0, height: 0 }}
                             className="mt-3 flex items-center gap-1.5 text-[9px] font-bold tracking-[0.2em] text-zinc-600 uppercase opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                            <ChevronDown className="w-3 h-3" /> Click to read full
+                            <ChevronDown className="w-3 h-3" /> Click to read full context
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Expanded Raw Content */}
+                <AnimatePresence>
+                    {isExpanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                            animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
+                            exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="p-3 rounded-xl bg-black/40 border border-white/5">
+                                <p className="text-[12px] leading-[1.6] text-zinc-400 font-normal whitespace-pre-wrap">
+                                    {displayBody}
+                                </p>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>

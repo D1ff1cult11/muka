@@ -1,6 +1,37 @@
+'use client'
+
 import { Search, Bell, Command } from 'lucide-react';
+import { useState } from 'react';
+import { useMukaStore } from '@/store/useMukaStore';
 
 export function Navbar() {
+    const [inputValue, setInputValue] = useState('');
+    const [isIngesting, setIsIngesting] = useState(false);
+    const { fetchFeed } = useMukaStore();
+
+    const handleIngest = async (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && inputValue.trim() && !isIngesting) {
+            setIsIngesting(true);
+            try {
+                const res = await fetch('/api/ingest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: inputValue, source: 'manual' }),
+                });
+
+                if (res.ok) {
+                    setInputValue('');
+                    // Refresh the feed immediately to show the new sorted notification
+                    await fetchFeed();
+                }
+            } catch (error) {
+                console.error('Ingestion failed:', error);
+            } finally {
+                setIsIngesting(false);
+            }
+        }
+    };
+
     return (
         <nav className="sticky top-0 z-40 w-full flex items-center justify-between px-8 py-5 bg-[#050505]/80 backdrop-blur-2xl border-b border-[#151515]">
             <div className="flex items-center gap-8 flex-1">
@@ -13,12 +44,16 @@ export function Navbar() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-[#8B5CF6] transition-colors" />
                         <input
                             type="text"
-                            placeholder="Unified Input — route, search, or compose..."
-                            className="w-full bg-[#0A0A0A] border border-[#1A1A1A] group-hover:border-[#222222] focus:border-[#8B5CF6]/50 focus:bg-black rounded-xl py-2.5 pl-12 pr-12 text-sm text-zinc-200 placeholder-zinc-600 outline-none transition-all"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={handleIngest}
+                            disabled={isIngesting}
+                            placeholder={isIngesting ? "Classifying with AI..." : "Unified Input — type raw text to sort instantly..."}
+                            className="w-full bg-[#0A0A0A] border border-[#1A1A1A] group-hover:border-[#222222] focus:border-[#8B5CF6]/50 focus:bg-black rounded-xl py-2.5 pl-12 pr-12 text-sm text-zinc-200 placeholder-zinc-600 outline-none transition-all disabled:opacity-50"
                         />
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded border border-[#2A2A2A] bg-[#1A1A1A]">
                             <Command className="w-2.5 h-2.5 text-zinc-500" />
-                            <span className="text-[10px] font-mono text-zinc-500">K</span>
+                            <span className="text-[10px] font-mono text-zinc-500">ENTER</span>
                         </div>
                     </div>
                 </div>

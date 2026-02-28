@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export function Dashboard() {
-    const { instant, scheduled, batch, moveMessage, fetchFeed, fetchStats, subscribeToNotifications, isFocusModeActive } = useMukaStore();
+    const { instant, scheduled, batch, moveMessage, fetchFeed, subscribeToNotifications, isFocusModeActive } = useMukaStore();
     const [userId, setUserId] = useState<string | null>(null);
 
     // Hydration fix for DragDropContext (avoids SSR mismatch)
@@ -28,7 +28,6 @@ export function Dashboard() {
                 setUserId(user.id);
                 // 2. Initial fetch
                 fetchFeed();
-                fetchStats();
             }
         });
 
@@ -68,7 +67,7 @@ export function Dashboard() {
     }
 
     return (
-        <div className="relative w-full h-full py-10 px-6 lg:px-10 overflow-hidden">
+        <div className="relative w-full h-full min-h-screen py-10 px-6 lg:px-10 overflow-y-auto overflow-x-hidden">
             {/* Background Auras */}
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyber-red/5 blur-[160px] rounded-full animate-pulse-slow pointer-events-none" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-neon-green/5 blur-[160px] rounded-full animate-pulse-slow pointer-events-none" />

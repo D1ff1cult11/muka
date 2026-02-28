@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import {
     dismissNotification,
     snoozeNotification,
@@ -17,18 +18,25 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized: No active session' }, { status: 401 });
+        }
+
         const { id } = await params
         const body = await req.json()
         const { action } = body
 
         if (action === 'dismiss') {
-            await dismissNotification(id)
+            await dismissNotification(id, user.id)
             return NextResponse.json({ success: true })
         }
 
         if (action === 'snooze') {
             const { until } = body
-            await snoozeNotification(id, new Date(until))
+            await snoozeNotification(id, new Date(until), user.id)
             return NextResponse.json({ success: true })
         }
 
@@ -39,7 +47,8 @@ export async function PATCH(
                 destinationZone as Zone,
                 rawText,
                 originalZone as Zone,
-                confidence
+                confidence,
+                user.id
             )
             return NextResponse.json({ success: true })
         }
@@ -57,6 +66,7 @@ export async function PATCH(
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Action failed'
+        console.error('Notification action error:', err)
         return NextResponse.json({ error: message }, { status: 500 })
     }
 }
@@ -70,6 +80,13 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized: No active session' }, { status: 401 });
+        }
+
         const { id } = await params
         await deleteNotification(id)
         return NextResponse.json({ success: true })

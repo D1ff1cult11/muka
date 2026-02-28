@@ -3,7 +3,7 @@
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { MessageCard } from './MessageCard';
 import { useMukaStore, Message, ZoneType } from '@/store/useMukaStore';
-import { Lock, Unlock, Circle, Zap } from 'lucide-react';
+import { Lock, Unlock, Zap, Activity, Calendar, Coffee } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -39,25 +39,25 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
         glow: string
     }> = {
         instant: {
-            icon: <Circle className="w-2.5 h-2.5 fill-current" />,
-            color: 'text-[#8B5CF6]',
+            icon: <Activity className="w-4 h-4 text-cyber-red" />,
+            color: 'text-cyber-red',
             status: 'active',
-            accent: 'bg-[#8B5CF6]',
-            glow: 'shadow-[0_0_15px_rgba(139,92,246,0.3)]'
+            accent: 'bg-cyber-red',
+            glow: 'shadow-[0_0_15px_rgba(255,51,102,0.3)]'
         },
         scheduled: {
-            icon: isScheduledRelease ? <Zap className="w-2.5 h-2.5 animate-pulse" /> : <Circle className="w-2.5 h-2.5 fill-current" />,
-            color: isScheduledRelease ? 'text-[#8B5CF6]' : 'text-[#FBBF24]',
+            icon: isScheduledRelease ? <Zap className="w-4 h-4 text-electric-amber animate-pulse" /> : <Calendar className="w-4 h-4 text-electric-amber" />,
+            color: 'text-electric-amber',
             status: isScheduledRelease ? 'releasing' : 'queued',
-            accent: isScheduledRelease ? 'bg-[#8B5CF6]' : 'bg-[#FBBF24]',
-            glow: isScheduledRelease ? 'shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+            accent: 'bg-electric-amber',
+            glow: 'shadow-[0_0_15px_rgba(255,204,0,0.3)]'
         },
         batch: {
-            icon: <Circle className="w-2.5 h-2.5 fill-current" />,
-            color: 'text-[#BEF264]',
+            icon: <Coffee className="w-4 h-4 text-neon-green" />,
+            color: 'text-neon-green',
             status: 'batched',
-            accent: 'bg-[#BEF264]',
-            glow: 'shadow-[0_0_15px_rgba(190,242,100,0.3)]'
+            accent: 'bg-neon-green',
+            glow: 'shadow-[0_0_15px_rgba(0,255,102,0.3)]'
         }
     };
     const config = zoneConfig[id];
@@ -96,8 +96,11 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             className={cn(
-                                "flex flex-col gap-4 h-full transition-all duration-700 rounded-[32px] p-2 pb-40",
-                                snapshot.isDraggingOver && "bg-white/[0.02] border border-white/5",
+                                "flex flex-col gap-4 h-full transition-all duration-700 rounded-[32px] p-3 pb-40 border-[0.5px]",
+                                id === 'instant' ? "bg-cyber-red/[0.02] border-cyber-red/20" :
+                                    id === 'scheduled' ? "bg-electric-amber/[0.02] border-electric-amber/20" :
+                                        "bg-neon-green/[0.02] border-neon-green/20",
+                                snapshot.isDraggingOver && "bg-white/[0.05] border-white/20",
                                 isLockedByDefault && !isUnlocked && "blur-[12px] pointer-events-none opacity-40 grayscale"
                             )}
                         >

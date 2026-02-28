@@ -31,6 +31,7 @@ export async function POST(req: Request) {
             title: n.title || n.raw_text.substring(0, 50),
             snippet: n.raw_text,
             source: n.source,
+            sender: n.sender,
             label: (n.user_zone ?? n.zone).charAt(0).toUpperCase() + (n.user_zone ?? n.zone).slice(1),
             timestamp: n.created_at
         }));

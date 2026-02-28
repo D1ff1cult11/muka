@@ -119,6 +119,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                     title?: string;
                     snippet: string;
                     source: string;
+                    sender?: string;
                     label: string;
                     timestamp: string | number;
                 }> = await res.json();
@@ -134,7 +135,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                             id: item.id,
                             title: item.title,
                             content: item.snippet,
-                            sender: item.source.charAt(0).toUpperCase() + item.source.slice(1),
+                            sender: item.sender || (item.source.charAt(0).toUpperCase() + item.source.slice(1)),
                             type: item.label.toLowerCase() as ZoneType,
                             createdAt: new Date(item.timestamp).getTime(),
                         };
@@ -258,7 +259,7 @@ export const useMukaStore = create<MukaState>((set, get) => ({
                         id: newItem.id,
                         title: newItem.title ?? 'New Notification',
                         content: newItem.raw_text,
-                        sender: newItem.source === 'gmail' ? 'Gmail' : (newItem.source === 'classroom' ? 'Classroom' : 'Muka'),
+                        sender: newItem.sender || (newItem.source === 'gmail' ? 'Gmail' : (newItem.source === 'classroom' ? 'Classroom' : 'Muka')),
                         type: newItem.zone,
                         createdAt: new Date(newItem.created_at).getTime(),
                     };

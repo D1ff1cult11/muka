@@ -53,17 +53,38 @@ export async function signout() {
 
 export async function signInWithGoogle() {
     const supabase = await createClient()
-    const origin = (await headers()).get('origin');
-    const redirectUrl = origin ? `${origin}/auth/callback` : `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
 
-    const { data } = await supabase.auth.signInWithOAuth({
+    // Simpler, more robust way to get the base URL
+    const getURL = () => {
+        let url =
+            process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+            process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+            'http://localhost:3000/'
+        // Make sure to include `https://` when not localhost.
+        url = url.includes('http') ? url : `https://${url}`
+        // Make sure to include a trailing `/`.
+        url = url.charAt(url.length - 1) === '/' ? url : `${url}/`
+        return url
+    }
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: redirectUrl,
+            redirectTo: `${getURL()}auth/callback`,
+            scopes: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/classroom.coursework.students https://www.googleapis.com/auth/classroom.courses.readonly',
+            queryParams: {
+                access_type: 'offline',
+                prompt: 'consent',
+            }
         },
     })
 
+    if (error) {
+        console.error("Google Auth error", error);
+        return redirect('/login?error=' + error.message)
+    }
+
     if (data.url) {
-        redirect(data.url) // use the redirect API for your server framework
+        redirect(data.url)
     }
 }

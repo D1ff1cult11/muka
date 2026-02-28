@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ingestAndClassify, getNotificationsByZone } from '@/services/classify.service';
 
 /**
  * Technical Requirement 3: Parallel Fetching (Optimized)
@@ -78,9 +79,12 @@ async function classifyMessage(title: string, snippet: string) {
 
     try {
         const response = await fetch(
-            "https://api-inference.huggingface.co/models/facebook/bart-large-mnli",
+            "https://router.huggingface.co/hf-inference/models/facebook/bart-large-mnli",
             {
-                headers: { Authorization: `Bearer ${API_KEY}` },
+                headers: {
+                    Authorization: `Bearer ${API_KEY}`,
+                    "Content-Type": "application/json"
+                },
                 method: "POST",
                 body: JSON.stringify({
                     inputs: content,
@@ -101,8 +105,6 @@ async function classifyMessage(title: string, snippet: string) {
  * API Route Handler
  * Technical Requirement 1: POST request
  */
-import { ingestAndClassify, getNotificationsByZone } from '@/services/classify.service';
-
 export async function POST(req: Request) {
     try {
         const { cachedIds } = await req.json();

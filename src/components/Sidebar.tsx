@@ -27,11 +27,12 @@ export function Sidebar() {
     ]
 
     return (
-        <aside className="w-20 h-screen border-r border-[#151515] bg-[#050505] flex flex-col items-center py-8 select-none shrink-0 overflow-visible relative z-50">
+        <aside className="w-24 h-screen border-r border-white/5 bg-muka-black/80 backdrop-blur-xl flex flex-col items-center py-10 select-none shrink-0 overflow-visible relative z-50">
             {/* Logo Part */}
-            <div className="mb-12">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.3)]">
-                    <span className="text-white font-bold text-xl">M</span>
+            <div className="mb-14 relative group">
+                <div className="absolute inset-0 bg-muka-purple/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                <div className="relative w-12 h-12 rounded-[18px] bg-gradient-to-br from-muka-purple to-[#6D28D9] flex items-center justify-center shadow-2xl transition-transform duration-500 group-hover:scale-110 group-active:scale-95">
+                    <span className="text-white font-black text-2xl tracking-tighter">M</span>
                 </div>
             </div>
 
@@ -67,24 +68,25 @@ export function Sidebar() {
             </nav>
 
             {/* Shield / Focus Mode Toggle */}
-            <div className="mt-auto flex flex-col items-center gap-6">
+            <div className="mt-auto flex flex-col items-center gap-8">
                 <div
                     onClick={toggleFocusMode}
                     className={cn(
-                        "w-12 h-12 rounded-full flex items-center justify-center cursor-pointer transition-all duration-500 relative group",
+                        "w-14 h-14 rounded-full flex items-center justify-center cursor-pointer transition-all duration-1000 relative group",
                         isFocusModeActive
-                            ? "bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-                            : "bg-[#111] border border-zinc-800 text-zinc-600 hover:border-zinc-500"
+                            ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+                            : "bg-white/5 border border-white/5 text-zinc-600 hover:text-zinc-100 hover:bg-white/10"
                     )}
                 >
-                    <Shield className={cn("w-5 h-5 transition-transform", isFocusModeActive && "scale-110")} />
+                    <Shield className={cn("w-6 h-6 transition-transform duration-700", isFocusModeActive && "scale-110 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]")} />
                     {isFocusModeActive && (
-                        <div className="absolute inset-0 rounded-full border border-emerald-500/60 animate-ping opacity-20" />
+                        <div className="absolute inset-0 rounded-full border border-emerald-500/40 animate-ping opacity-10" />
                     )}
                 </div>
 
-                <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 cursor-pointer hover:bg-zinc-800 transition-colors">
-                    <span className="text-[10px] font-bold">JD</span>
+                <div className="w-12 h-12 rounded-2xl bg-zinc-900/50 border border-white/5 flex items-center justify-center text-zinc-100 font-bold cursor-pointer hover:bg-zinc-800 transition-all duration-500 shadow-xl overflow-hidden relative group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-muka-purple/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-[11px] font-black z-10 font-mono">JD</span>
                 </div>
             </div>
         </aside>

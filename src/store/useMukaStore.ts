@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { createClient } from '@/lib/supabase/client';
+import type { NotificationRow } from '@/types/database';
 
 export type ZoneType = 'instant' | 'scheduled' | 'batch';
 
@@ -24,6 +26,8 @@ interface MukaState {
     fetchFeed: () => Promise<void>;
     dismissMessage: (messageId: string, zone: ZoneType) => void;
     snoozeMessage: (messageId: string, zone: ZoneType) => void;
+    subscribeToNotifications: (userId: string) => () => void;
+
 }
 
 export const useMukaStore = create<MukaState>((set, get) => ({
@@ -130,7 +134,6 @@ export const useMukaStore = create<MukaState>((set, get) => ({
         if (index !== -1) {
             list.splice(index, 1);
             set({ [zone]: list });
-
             // Persist to backend
             fetch(`/api/notifications/${messageId}`, {
                 method: 'PATCH',
@@ -186,8 +189,6 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             set({
                 [sourceZone]: sourceList,
                 [destinationZone]: destinationList,
-                energySaved: newEnergySaved,
-                focusScore: newFocusScore
             });
 
             // Persist Zone Override to Learning Layer
@@ -207,4 +208,48 @@ export const useMukaStore = create<MukaState>((set, get) => ({
             // Telemetry has been removed per user instructions
         }
     },
+
+    subscribeToNotifications: (userId) => {
+        const supabase = createClient();
+
+        const channel = supabase
+            .channel('realtime_notifications')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `user_id=eq.${userId}`
+                },
+                (payload) => {
+                    const newItem = payload.new as NotificationRow;
+
+                    const msg: Message = {
+                        id: newItem.id,
+                        title: newItem.title ?? 'New Notification',
+                        content: newItem.raw_text,
+                        sender: newItem.source === 'gmail' ? 'Gmail' : (newItem.source === 'classroom' ? 'Classroom' : 'Muka'),
+                        type: newItem.zone,
+                        createdAt: new Date(newItem.created_at).getTime(),
+                    };
+
+                    set((state) => {
+                        // Avoid duplicates
+                        const allIds = [...state.instant, ...state.scheduled, ...state.batch].map(m => m.id);
+                        if (allIds.includes(msg.id)) return state;
+
+                        if (msg.type === 'instant') return { instant: [msg, ...state.instant] };
+                        if (msg.type === 'scheduled') return { scheduled: [msg, ...state.scheduled] };
+                        return { batch: [msg, ...state.batch] };
+                    });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    },
+
 }));

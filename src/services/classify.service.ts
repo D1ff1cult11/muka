@@ -8,7 +8,7 @@ import { supabaseAdmin } from '@/lib/db'
 import type { ClassificationResult, IngestPayload, Notification } from '@/models/Notification.model'
 import type { Zone } from '@/types/database'
 
-const HF_API_URL = 'https://api-inference.huggingface.co/models/facebook/bart-large-mnli'
+const HF_API_URL = 'https://router.huggingface.co/hf-inference/models/facebook/bart-large-mnli'
 const CONFIDENCE_THRESHOLD = 0.55  // below this, fallback safety logic triggers
 
 // The three candidate labels passed to the zero-shot model
@@ -79,7 +79,8 @@ export async function classifyText(text: string): Promise<ClassificationResult> 
  * Classifies a raw message and persists it to the `notifications` table.
  */
 export async function ingestAndClassify(payload: IngestPayload, userId: string): Promise<Notification> {
-    const classification = await classifyText(payload.raw_text)
+    const textToClassify = payload.title ? `Title: ${payload.title}\nContent: ${payload.raw_text}` : payload.raw_text
+    const classification = await classifyText(textToClassify)
 
     if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
 
@@ -88,8 +89,11 @@ export async function ingestAndClassify(payload: IngestPayload, userId: string):
         .insert({
             user_id: userId,
             raw_text: payload.raw_text,
+            title: payload.title ?? null,
             source: payload.source,
             sender: payload.sender ?? null,
+            external_id: payload.external_id ?? null,
+            scheduled_for: payload.scheduled_for ?? null,
             zone: classification.zone,
             confidence: classification.confidence,
             ai_model: classification.ai_model,
@@ -156,13 +160,14 @@ export async function getHandledNotifications(userId: string): Promise<Notificat
 /**
  * Dismisses a notification (quick micro-action).
  */
-export async function dismissNotification(id: string): Promise<void> {
+export async function dismissNotification(id: string, userId: string): Promise<void> {
     if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
 
     const { error } = await supabaseAdmin
         .from('notifications')
         .update({ is_dismissed: true, updated_at: new Date().toISOString() })
         .eq('id', id)
+        .eq('user_id', userId)
 
     if (error) throw new Error(`Failed to dismiss notification: ${error.message}`)
 }
@@ -170,7 +175,7 @@ export async function dismissNotification(id: string): Promise<void> {
 /**
  * Snoozes a notification until the given time.
  */
-export async function snoozeNotification(id: string, until: Date): Promise<void> {
+export async function snoozeNotification(id: string, until: Date, userId: string): Promise<void> {
     if (!supabaseAdmin) throw new Error('Supabase Admin client not initialized')
 
     const { error } = await supabaseAdmin
@@ -181,6 +186,7 @@ export async function snoozeNotification(id: string, until: Date): Promise<void>
             updated_at: new Date().toISOString(),
         })
         .eq('id', id)
+        .eq('user_id', userId)
 
     if (error) throw new Error(`Failed to snooze notification: ${error.message}`)
 }
@@ -193,7 +199,8 @@ export async function overrideZone(
     correctedZone: Zone,
     rawText: string,
     originalZone: Zone,
-    aiConfidence: number
+    aiConfidence: number,
+    userId: string
 ): Promise<void> {
     const now = new Date().toISOString()
 
@@ -204,6 +211,7 @@ export async function overrideZone(
         .from('notifications')
         .update({ user_zone: correctedZone, updated_at: now })
         .eq('id', id)
+        .eq('user_id', userId)
 
     if (updateError) throw new Error(`Failed to update zone: ${updateError.message}`)
 
@@ -216,6 +224,7 @@ export async function overrideZone(
             corrected_zone: correctedZone,
             raw_text_snapshot: rawText,
             ai_confidence: aiConfidence,
+            user_id: userId,
         })
 
     if (correctionError) throw new Error(`Failed to log correction: ${correctionError.message}`)

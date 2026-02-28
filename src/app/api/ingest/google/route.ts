@@ -7,17 +7,18 @@ import { ingestAndClassify } from '@/services/classify.service';
 export async function POST(req: NextRequest) {
     try {
         const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session }, error } = await supabase.auth.getSession();
 
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (error || !session || !session.user) {
+            return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
         }
 
-        const body = await req.json();
-        const { accessToken, refreshToken } = body;
+        const user = session.user;
+        const accessToken = session.provider_token;
+        const refreshToken = session.provider_refresh_token ?? undefined;
 
         if (!accessToken) {
-            return NextResponse.json({ error: '`accessToken` is required.' }, { status: 400 });
+            return NextResponse.json({ error: 'Google Access Token not found in session. Please sign in with Google.' }, { status: 400 });
         }
 
         const auth = getGoogleAuth(accessToken, refreshToken);

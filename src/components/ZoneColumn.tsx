@@ -65,32 +65,43 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
     const config = zoneConfig[id];
 
     return (
-        <div className="flex flex-col h-full min-w-0">
+        <div className="flex flex-col h-full min-w-0 group/col relative">
+            {/* Column Glow */}
+            <div className={cn("absolute -top-20 inset-x-0 h-40 blur-[100px] opacity-0 group-hover/col:opacity-20 transition-opacity duration-1000 rounded-full pointer-events-none", config.accent)} />
+
             {/* Header */}
-            <header className="mb-6 flex items-center justify-between px-2">
-                <div className="flex items-center gap-3">
-                    <div className={cn("flex items-center gap-2", config.color)}>
-                        {config.icon}
-                        <h2 className="font-mono text-[11px] font-bold tracking-[0.2em] uppercase">
+            <header className="mb-8 flex items-center justify-between px-2">
+                <div className="flex items-center gap-4">
+                    <div className={cn("flex items-center gap-3", config.color)}>
+                        <div className={cn("w-1.5 h-6 rounded-full", config.accent, config.glow)} />
+                        <h2 className="font-black text-[12px] font-mono tracking-[0.3em] uppercase text-zinc-100 group-hover/col:text-white transition-colors">
                             {title}
                         </h2>
                     </div>
-                    <span className="text-[11px] font-medium text-zinc-600 lowercase font-mono">
-                        {messages.length} {config.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <div className="w-1 h-1 rounded-full bg-zinc-700" />
+                        <span className="text-[10px] font-black text-zinc-600 lowercase font-mono tracking-widest">
+                            {messages.length} {config.status}
+                        </span>
+                    </div>
                 </div>
 
                 {(isLockedByDefault || (id === 'scheduled' && !isScheduledRelease)) && (
                     <button
                         onClick={() => setIsUnlocked(!isUnlocked)}
-                        className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-[#111] transition-all"
+                        className={cn(
+                            "p-2 rounded-xl transition-all duration-500",
+                            isUnlocked
+                                ? "bg-white/5 text-zinc-400 hover:text-white"
+                                : "bg-muka-lime/10 text-muka-lime hover:bg-muka-lime/20"
+                        )}
                     >
-                        {isUnlocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                        {isUnlocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                     </button>
                 )}
             </header>
 
-            <div className="relative flex-1">
+            <div className="relative flex-1 px-1">
                 {/* Scroll Area / Droppable */}
                 <Droppable droppableId={id} isDropDisabled={isLockedByDefault && !isUnlocked}>
                     {(provided, snapshot) => (
@@ -98,11 +109,11 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             className={cn(
-                                "flex flex-col gap-4 h-full transition-all duration-300 rounded-2xl p-1",
-                                snapshot.isDraggingOver && "bg-zinc-500/5 ring-1 ring-zinc-800"
+                                "flex flex-col gap-5 h-full transition-all duration-700 rounded-3xl p-1 pb-40",
+                                snapshot.isDraggingOver && "bg-white/[0.02] ring-1 ring-white/5 backdrop-blur-3xl"
                             )}
                         >
-                            <AnimatePresence initial={false}>
+                            <AnimatePresence mode="popLayout" initial={false}>
                                 {messages.map((msg, index) => (
                                     <Draggable key={msg.id} draggableId={msg.id} index={index}>
                                         {(provided, snapshot) => (
@@ -131,21 +142,30 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
                 {/* Lock Overlay */}
                 {isLockedByDefault && !isUnlocked && (
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-[#050505]/60 backdrop-blur-sm rounded-2xl border border-[#151515]"
+                        initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+                        animate={{ opacity: 1, backdropFilter: 'blur(10px)' }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-x-1 inset-y-0 z-20 flex flex-col items-center justify-center gap-6 bg-muka-black/40 rounded-[32px] border border-white/5 group-hover/col:border-muka-lime/20 transition-colors duration-1000"
                     >
-                        <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center">
-                            <Lock className="w-5 h-5 text-zinc-500" />
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-muka-lime/20 blur-2xl animate-pulse rounded-full" />
+                            <div className="relative w-16 h-16 rounded-full bg-zinc-900 border border-white/5 flex items-center justify-center shadow-2xl">
+                                <Lock className="w-6 h-6 text-muka-lime" />
+                            </div>
                         </div>
-                        <p className="text-[10px] font-mono font-bold tracking-widest text-zinc-500 uppercase">
-                            Deep Work Shield Active
-                        </p>
+                        <div className="text-center">
+                            <p className="text-[11px] font-black font-mono tracking-[0.3em] text-white uppercase mb-1">
+                                Vault Locked
+                            </p>
+                            <p className="text-[9px] font-bold font-mono tracking-widest text-zinc-600 uppercase">
+                                Deep Work Protection Active
+                            </p>
+                        </div>
                         <button
                             onClick={() => setIsUnlocked(true)}
-                            className="px-4 py-2 bg-zinc-100 hover:bg-white text-black text-[10px] font-bold rounded-lg transition-all"
+                            className="px-6 py-2.5 bg-white hover:bg-zinc-200 text-black text-[10px] font-black rounded-xl transition-all shadow-xl active:scale-95 uppercase tracking-widest"
                         >
-                            OVERRIDE
+                            OVERRIDE SHIELD
                         </button>
                     </motion.div>
                 )}

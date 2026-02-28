@@ -1,38 +1,39 @@
-import { Search, Bell, Settings } from 'lucide-react';
+import { Search, Bell, Settings, Command } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function Navbar() {
     return (
-        <nav className="sticky top-0 z-40 w-full flex items-center justify-between px-8 py-4 bg-[#0A0A0A]/90 backdrop-blur-xl border-b border-[#1A1A1A]">
-            <div className="flex-1 max-w-xl">
-                <div className="relative group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-emerald-400 group-focus-within:drop-shadow-[0_0_8px_rgba(52,211,153,0.8)] transition-all" />
-                    <input
-                        type="text"
-                        placeholder="Search commands, messages, or files (Cmd+K)"
-                        className="w-full bg-[#111111] hover:bg-[#151515] focus:bg-[#0A0A0A] border border-[#222222] focus:border-emerald-500/50 focus:shadow-[0_0_15px_rgba(16,185,129,0.15)] rounded-lg py-2 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-600 outline-none transition-all"
-                    />
+        <nav className="sticky top-0 z-40 w-full flex items-center justify-between px-8 py-5 bg-[#050505]/80 backdrop-blur-2xl border-b border-[#151515]">
+            <div className="flex items-center gap-8 flex-1">
+                <div className="text-xs font-bold font-mono tracking-[0.3em] uppercase text-zinc-500">
+                    MUKA <span className="text-[#8B5CF6]">AI</span>
+                </div>
+
+                <div className="flex-1 max-w-2xl">
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-[#8B5CF6] transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="Unified Input — route, search, or compose..."
+                            className="w-full bg-[#0A0A0A] border border-[#1A1A1A] group-hover:border-[#222222] focus:border-[#8B5CF6]/50 focus:bg-black rounded-xl py-2.5 pl-12 pr-12 text-sm text-zinc-200 placeholder-zinc-600 outline-none transition-all"
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded border border-[#2A2A2A] bg-[#1A1A1A]">
+                            <Command className="w-2.5 h-2.5 text-zinc-500" />
+                            <span className="text-[10px] font-mono text-zinc-500">K</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="flex items-center gap-4 ml-8">
-                <button className="relative p-2 text-zinc-400 hover:text-zinc-100 transition-colors rounded-lg hover:bg-[#1A1A1A]">
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-                </button>
-                <button className="p-2 text-zinc-400 hover:text-zinc-100 transition-colors rounded-lg hover:bg-[#1A1A1A]">
-                    <Settings className="w-5 h-5" />
-                </button>
+            <div className="flex items-center gap-6 ml-8">
+                <div className="relative group cursor-pointer p-1">
+                    <Bell className="w-5 h-5 text-zinc-500 group-hover:text-zinc-200 transition-colors" />
+                    <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-[#8B5CF6] border-2 border-black shadow-[0_0_10px_rgba(139,92,246,0.6)] animate-pulse" />
+                </div>
 
-                <div className="h-8 w-px bg-[#222222] mx-2" />
-
-                <div className="flex items-center gap-3 cursor-pointer group">
-                    <div className="text-right hidden sm:block">
-                        <p className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">Commander</p>
-                        <p className="text-[10px] text-emerald-400 font-mono uppercase tracking-widest drop-shadow-[0_0_5px_rgba(52,211,153,0.8)]">Active</p>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-900 to-[#111] border border-emerald-500/50 flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all relative overflow-hidden">
-                        <div className="absolute inset-0 bg-emerald-500/10 blur-md" />
-                        <span className="text-xs font-bold text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.8)] relative z-10">C</span>
+                <div className="flex items-center gap-3 pl-4 border-l border-[#1A1A1A]">
+                    <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
+                        JD
                     </div>
                 </div>
             </div>

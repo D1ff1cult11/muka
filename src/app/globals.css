@@ -1,1 +1,46 @@
 @import "tailwindcss";
+
+@theme {
+  --color-muka-black: #050505;
+  --color-muka-card: #0A0A0A;
+  --color-muka-border: #151515;
+  --color-muka-purple: #8B5CF6;
+  --color-muka-amber: #FBBF24;
+  --color-muka-lime: #BEF264;
+}
+
+@layer base {
+  body {
+    @apply bg-muka-black text-zinc-100 antialiased;
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
+@layer utilities {
+  .glow-purple {
+    @apply shadow-[0_0_20px_rgba(139,92,246,0.15)];
+  }
+  .glow-amber {
+    @apply shadow-[0_0_20px_rgba(251,191,36,0.15)];
+  }
+  .glow-lime {
+    @apply shadow-[0_0_20px_rgba(190,242,100,0.15)];
+  }
+  .blur-glow {
+    @apply blur-3xl opacity-20 pointer-events-none;
+  }
+}
+
+/* Custom Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}

@@ -1,10 +1,12 @@
+'use client'
+
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { MessageCard } from './MessageCard';
 import { Message, ZoneType } from '@/store/useMukaStore';
-import { Lock, Unlock, Circle, Calendar, Inbox } from 'lucide-react';
+import { Lock, Unlock, Circle, Calendar, Layers, Activity, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface ZoneColumnProps {
     id: ZoneType;
@@ -13,10 +15,34 @@ interface ZoneColumnProps {
     isLockedByDefault?: boolean;
 }
 
-const zoneConfig: Record<ZoneType, { icon: React.ReactNode, color: string, tier: string, status: string, borderClass: string }> = {
-    instant: { icon: <Circle className="w-3 h-3 text-red-500 fill-red-500" />, color: 'text-red-500', tier: 'TIER 1', status: 'active', borderClass: 'border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.05)]' },
-    scheduled: { icon: <Calendar className="w-4 h-4 text-yellow-500" />, color: 'text-yellow-500', tier: 'TIER 2', status: 'queued', borderClass: 'border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.05)]' },
-    batch: { icon: <Inbox className="w-4 h-4 text-emerald-500" />, color: 'text-emerald-500', tier: 'TIER 3', status: 'suppressed', borderClass: 'border-emerald-500/20' }
+const zoneConfig: Record<ZoneType, {
+    icon: React.ReactNode,
+    color: string,
+    status: string,
+    accent: string,
+    glow: string
+}> = {
+    instant: {
+        icon: <Circle className="w-2.5 h-2.5 fill-current" />,
+        color: 'text-[#8B5CF6]',
+        status: 'active',
+        accent: 'bg-[#8B5CF6]',
+        glow: 'shadow-[0_0_15px_rgba(139,92,246,0.3)]'
+    },
+    scheduled: {
+        icon: <Circle className="w-2.5 h-2.5 fill-current" />,
+        color: 'text-[#FBBF24]',
+        status: 'queued',
+        accent: 'bg-[#FBBF24]',
+        glow: 'shadow-[0_0_15px_rgba(251,191,36,0.3)]'
+    },
+    batch: {
+        icon: <Circle className="w-2.5 h-2.5 fill-current" />,
+        color: 'text-[#BEF264]',
+        status: 'bundles',
+        accent: 'bg-[#BEF264]',
+        glow: 'shadow-[0_0_15px_rgba(190,242,100,0.3)]'
+    }
 };
 
 export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: ZoneColumnProps) {
@@ -24,80 +50,92 @@ export function ZoneColumn({ id, title, messages, isLockedByDefault = false }: Z
     const config = zoneConfig[id];
 
     return (
-        <div className={cn("relative flex min-h-[600px] flex-col rounded-xl border bg-[#0A0A0A] p-4 transition-all", config.borderClass)}>
-            <div className="mb-6 flex items-center justify-between border-b border-[#222222] pb-4">
+        <div className="flex flex-col h-full min-w-0">
+            {/* Header */}
+            <header className="mb-6 flex items-center justify-between px-2">
                 <div className="flex items-center gap-3">
-                    {config.icon}
-                    <h2 className={cn("font-mono text-xs text-md font-bold tracking-widest uppercase", config.color)}>
-                        {title}
-                    </h2>
-                    <span className="bg-[#1A1A1A] border border-[#2A2A2A] text-zinc-400 text-[9px] font-mono px-2 py-0.5 rounded tracking-wider leading-none">
-                        {config.tier}
-                    </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-mono text-zinc-500">
+                    <div className={cn("flex items-center gap-2", config.color)}>
+                        {config.icon}
+                        <h2 className="font-mono text-[11px] font-bold tracking-[0.2em] uppercase">
+                            {title}
+                        </h2>
+                    </div>
+                    <span className="text-[11px] font-medium text-zinc-600 lowercase font-mono">
                         {messages.length} {config.status}
                     </span>
-                    {isLockedByDefault && (
-                        <button
-                            onClick={() => setIsUnlocked(!isUnlocked)}
-                            className="rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-white"
-                            title={isUnlocked ? "Lock Zone" : "Unlock Zone"}
-                        >
-                            {isUnlocked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-                        </button>
-                    )}
                 </div>
-            </div>
 
-            {isLockedByDefault && !isUnlocked && (
-                <div className="absolute inset-0 z-10 mx-4 mb-4 mt-16 flex flex-col items-center justify-center rounded-lg border border-emerald-900/30 bg-black/60 backdrop-blur-md">
-                    <Lock className="mb-2 h-8 w-8 text-emerald-500/50" />
-                    <p className="text-sm font-mono text-emerald-500/70">DEEP WORK ZONE LOCKED</p>
+                {isLockedByDefault && (
                     <button
-                        onClick={() => setIsUnlocked(true)}
-                        className="mt-4 rounded-md border border-emerald-500/30 bg-emerald-950/30 px-4 py-2 text-xs font-bold text-emerald-400 transition-colors hover:bg-emerald-900/50 hover:text-emerald-300"
+                        onClick={() => setIsUnlocked(!isUnlocked)}
+                        className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-[#111] transition-all"
                     >
-                        OVERRIDE LOCK
+                        {isUnlocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
                     </button>
-                </div>
-            )}
-
-            <Droppable droppableId={id} isDropDisabled={isLockedByDefault && !isUnlocked}>
-                {(provided, snapshot) => (
-                    <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={cn(
-                            "flex flex-1 flex-col gap-4 rounded-lg transition-colors border-2",
-                            snapshot.isDraggingOver ? "border-dashed border-zinc-800 bg-[#0F0F0F]" : "border-transparent"
-                        )}
-                    >
-                        <AnimatePresence>
-                            {messages.map((msg, index) => (
-                                <Draggable key={msg.id} draggableId={msg.id} index={index}>
-                                    {(provided, snapshot) => (
-                                        <div
-                                            ref={provided.innerRef}
-                                            {...provided.draggableProps}
-                                            {...provided.dragHandleProps}
-                                            style={{
-                                                ...provided.draggableProps.style,
-                                                opacity: snapshot.isDragging ? 0.8 : 1,
-                                            }}
-                                        >
-                                            <MessageCard message={msg} index={index} />
-                                        </div>
-                                    )}
-                                </Draggable>
-                            ))}
-                        </AnimatePresence>
-                        {provided.placeholder}
-                    </div>
                 )}
-            </Droppable>
+            </header>
+
+            <div className="relative flex-1">
+                {/* Scroll Area / Droppable */}
+                <Droppable droppableId={id} isDropDisabled={isLockedByDefault && !isUnlocked}>
+                    {(provided, snapshot) => (
+                        <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={cn(
+                                "flex flex-col gap-4 h-full transition-all duration-300 rounded-2xl p-1",
+                                snapshot.isDraggingOver && "bg-zinc-500/5 ring-1 ring-zinc-800"
+                            )}
+                        >
+                            <AnimatePresence initial={false}>
+                                {messages.map((msg, index) => (
+                                    <Draggable key={msg.id} draggableId={msg.id} index={index}>
+                                        {(provided, snapshot) => (
+                                            <div
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                                className="outline-none"
+                                            >
+                                                <MessageCard
+                                                    message={msg}
+                                                    index={index}
+                                                    zoneType={id}
+                                                    isDragging={snapshot.isDragging}
+                                                />
+                                            </div>
+                                        )}
+                                    </Draggable>
+                                ))}
+                            </AnimatePresence>
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+
+                {/* Lock Overlay */}
+                {isLockedByDefault && !isUnlocked && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-[#050505]/60 backdrop-blur-sm rounded-2xl border border-[#151515]"
+                    >
+                        <div className="w-12 h-12 rounded-full bg-zinc-900 flex items-center justify-center">
+                            <Lock className="w-5 h-5 text-zinc-500" />
+                        </div>
+                        <p className="text-[10px] font-mono font-bold tracking-widest text-zinc-500 uppercase">
+                            Deep Work Shield Active
+                        </p>
+                        <button
+                            onClick={() => setIsUnlocked(true)}
+                            className="px-4 py-2 bg-zinc-100 hover:bg-white text-black text-[10px] font-bold rounded-lg transition-all"
+                        >
+                            OVERRIDE
+                        </button>
+                    </motion.div>
+                )}
+            </div>
         </div>
     );
 }
+

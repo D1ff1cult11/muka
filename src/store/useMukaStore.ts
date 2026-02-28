@@ -25,6 +25,8 @@ interface MukaState {
     focusScore: number;
     isFocusModeActive: boolean;
     isWindowActive: boolean;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
     focusTimeLeft: number; // in seconds
     focusDuration: number; // initial duration in seconds
     toggleFocusMode: () => void;
@@ -49,6 +51,8 @@ export const useMukaStore = create<MukaState>((set, get) => ({
     focusScore: 100,
     isFocusModeActive: false,
     isWindowActive: false,
+    searchQuery: '',
+    setSearchQuery: (query) => set({ searchQuery: query }),
     focusTimeLeft: 0,
     focusDuration: 25 * 60, // Default 25 mins
 

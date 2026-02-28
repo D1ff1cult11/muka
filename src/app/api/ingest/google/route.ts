@@ -38,7 +38,6 @@ export async function POST() {
                     raw_text: `Subject: ${email.subject}\n\n${email.body}`,
                     source: 'gmail',
                     sender: email.sender,
-                    external_id: email.id,
                 }, user.id);
                 results.emailsIngested++;
             }
@@ -58,7 +57,6 @@ export async function POST() {
                     raw_text: `Assignment: ${assignment.title}\nDue: ${assignment.dueDate.toLocaleString()}\n\n${assignment.description}`,
                     source: 'classroom',
                     sender: assignment.courseName,
-                    external_id: assignment.id,
                 }, user.id);
                 results.assignmentsIngested++;
             }

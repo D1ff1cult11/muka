@@ -239,3 +239,34 @@ export async function fetchRecentAnnouncements(auth: Auth.OAuth2Client): Promise
     announcements = announcements.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return announcements.slice(0, 5); // Target the 5 most recent across all active classes
 }
+
+/**
+ * Gets a quick count of unread emails in the inbox.
+ */
+export async function fetchUnreadEmailsCount(auth: Auth.OAuth2Client): Promise<number> {
+    const gmail = google.gmail({ version: 'v1', auth });
+    try {
+        const res = await gmail.users.messages.list({
+            userId: 'me',
+            q: 'is:unread in:inbox',
+            maxResults: 1
+        });
+        return res.data.resultSizeEstimate || 0;
+    } catch (e) {
+        console.error('[Gmail] fetchUnreadEmailsCount error:', e);
+        return 0;
+    }
+}
+
+/**
+ * Gets a quick count of upcoming assignments across active courses.
+ */
+export async function fetchPendingAssignmentsCount(auth: Auth.OAuth2Client): Promise<number> {
+    try {
+        const assignments = await fetchUpcomingAssignments(auth);
+        return assignments.length;
+    } catch (e) {
+        console.error('[GClassroom] fetchPendingAssignmentsCount error:', e);
+        return 0;
+    }
+}
